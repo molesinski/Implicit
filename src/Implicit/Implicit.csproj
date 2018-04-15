@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net40;net461;netstandard1.3;netstandard2.0</TargetFrameworks>
+    <NetStandardImplicitPackageVersion>2.0.1</NetStandardImplicitPackageVersion>
+    <AssemblyName>Implicit</AssemblyName>
+    <RootNamespace>Implicit</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.0</Version>
+    <Authors>Maciej Olesiński</Authors>
+    <Description>Fast .NET Collaborative Filtering for Implicit Datasets.</Description>
+    <RepositoryUrl>https://github.com/molesinski/Implicit</RepositoryUrl>
+    <PackageId>Implicit</PackageId>
+    <PackageProjectUrl>https://github.com/molesinski/Implicit</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/molesinski/Implicit/blob/master/LICENSE</PackageLicenseUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>
