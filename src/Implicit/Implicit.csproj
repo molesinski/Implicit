@@ -14,13 +14,6 @@
     <PackageId>Implicit</PackageId>
     <PackageProjectUrl>https://github.com/molesinski/Implicit</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/molesinski/Implicit/blob/master/LICENSE</PackageLicenseUrl>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 

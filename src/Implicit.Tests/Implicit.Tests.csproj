@@ -1,19 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp1.1;netcoreapp2.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks><!--<TargetFrameworks>net461;netcoreapp1.1;netcoreapp2.0</TargetFrameworks>-->
     <RuntimeFrameworkVersion>2.0.5</RuntimeFrameworkVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <IsPackable>false</IsPackable>
-    <Version>0.1.0</Version>
-    <Authors>Maciej Olesiński</Authors>
-    <Description>Fast .NET Collaborative Filtering for Implicit Datasets.</Description>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
