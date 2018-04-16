@@ -10,6 +10,8 @@ namespace Implicit
 
         IEnumerable<TKey> RankUsers<TKey>(UserFactors user, IEnumerable<KeyValuePair<TKey, UserFactors>> users);
 
+        UserFactors GetUserFactors(string userId);
+
         UserFactors ComputeUserFactors(Dictionary<string, double> items);
     }
 }

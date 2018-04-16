@@ -344,6 +344,24 @@ namespace Implicit
                 .ToList();
         }
 
+        public UserFactors GetUserFactors(string userId)
+        {
+            if (userId == null)
+            {
+                throw new ArgumentNullException(nameof(userId));
+            }
+
+            if (!this.userMap.ContainsKey(userId))
+            {
+                return null;
+            }
+
+            var xu = this.userFactors.Row(this.userMap[userId]);
+            var user = new UserFactors(xu);
+
+            return user;
+        }
+
         public UserFactors ComputeUserFactors(Dictionary<string, double> items)
         {
             if (items == null)
