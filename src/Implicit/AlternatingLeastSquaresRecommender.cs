@@ -222,7 +222,7 @@ namespace Implicit
             }
         }
 
-        public IEnumerable<string> RecommendUser(string userId)
+        public IEnumerable<ItemResult> RecommendUser(string userId)
         {
             if (userId == null)
             {
@@ -231,7 +231,7 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return Enumerable.Empty<string>();
+                return Enumerable.Empty<ItemResult>();
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
@@ -240,7 +240,7 @@ namespace Implicit
             return this.RecommendUser(user);
         }
 
-        public IEnumerable<string> RecommendUser(UserFactors user)
+        public IEnumerable<ItemResult> RecommendUser(UserFactors user)
         {
             if (user == null)
             {
@@ -256,14 +256,13 @@ namespace Implicit
                     {
                         this.itemFactors.Row(o.Value, yi);
 
-                        return new { ItemId = o.Key, Score = xu.DotProduct(yi) };
+                        return new ItemResult(o.Key, xu.DotProduct(yi));
                     })
                 .OrderByDescending(o => o.Score)
-                .Select(o => o.ItemId)
                 .ToList();
         }
 
-        public IEnumerable<string> RecommendItem(string itemId)
+        public IEnumerable<ItemResult> RecommendItem(string itemId)
         {
             if (itemId == null)
             {
@@ -272,7 +271,7 @@ namespace Implicit
 
             if (!this.itemMap.ContainsKey(itemId))
             {
-                return Enumerable.Empty<string>();
+                return Enumerable.Empty<ItemResult>();
             }
 
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
@@ -285,11 +284,10 @@ namespace Implicit
                         var j = o.Value;
                         this.itemFactors.Row(j, yj);
 
-                        return new { ItemId = o.Key, Score = yi.DotProduct(yj) / this.ItemNorms[j] };
+                        return new ItemResult(o.Key, yi.DotProduct(yj) / this.ItemNorms[j]);
                     })
                 .OrderByDescending(o => o.Score)
-                .Select(o => o.ItemId)
-                .Where(o => o != itemId)
+                .Where(o => o.ItemId != itemId)
                 .ToList();
         }
 

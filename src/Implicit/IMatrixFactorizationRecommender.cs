@@ -4,7 +4,7 @@ namespace Implicit
 {
     public interface IMatrixFactorizationRecommender : IRecommender
     {
-        IEnumerable<string> RecommendUser(UserFactors user);
+        IEnumerable<ItemResult> RecommendUser(UserFactors user);
 
         IEnumerable<TKey> RankUsers<TKey>(string userId, IEnumerable<KeyValuePair<TKey, UserFactors>> users);
 

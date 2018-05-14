@@ -6,7 +6,7 @@ namespace Implicit
 {
     public static class MatrixFactorizationRecommenderExtensions
     {
-        public static IEnumerable<string> RecommendUser(
+        public static IEnumerable<ItemResult> RecommendUser(
             this IMatrixFactorizationRecommender recommender,
             IEnumerable<string> items,
             bool excludeItems = false)
@@ -23,10 +23,10 @@ namespace Implicit
 
             return recommender
                 .RecommendUser(recommender.ComputeUserFactors(items))
-                .Where(o => !excludeItems || !items.Contains(o));
+                .Where(o => !excludeItems || !items.Contains(o.ItemId));
         }
 
-        public static IEnumerable<string> RecommendUser(
+        public static IEnumerable<ItemResult> RecommendUser(
             this IMatrixFactorizationRecommender recommender,
             Dictionary<string, double> items,
             bool excludeItems = false)
@@ -43,7 +43,7 @@ namespace Implicit
 
             return recommender
                 .RecommendUser(recommender.ComputeUserFactors(items))
-                .Where(o => !excludeItems || !items.ContainsKey(o));
+                .Where(o => !excludeItems || !items.ContainsKey(o.ItemId));
         }
 
         public static IEnumerable<TKey> RankUsers<TKey>(
