@@ -1,11 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net40;net461;netstandard1.3;netstandard2.0</TargetFrameworks>
-    <NetStandardImplicitPackageVersion>2.0.1</NetStandardImplicitPackageVersion>
-    <AssemblyName>Implicit</AssemblyName>
-    <RootNamespace>Implicit</RootNamespace>
+    <TargetFrameworks>net461;netstandard1.3;netstandard2.0</TargetFrameworks>
+    <NetStandardImplicitPackageVersion>2.0.2</NetStandardImplicitPackageVersion>
     <IsPackable>true</IsPackable>
     <Version>0.1.0</Version>
     <Authors>Maciej Olesiński</Authors>
@@ -14,11 +12,12 @@
     <PackageId>Implicit</PackageId>
     <PackageProjectUrl>https://github.com/molesinski/Implicit</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/molesinski/Implicit/blob/master/LICENSE</PackageLicenseUrl>
-    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MathNet.Numerics" Version="4.4.0" />
+    <PackageReference Include="MathNet.Numerics" Version="4.6.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
