@@ -2,7 +2,7 @@
 {
     public class ItemResult
     {
-        public ItemResult(string itemId, double score)
+        public ItemResult(string itemId, float score)
         {
             this.ItemId = itemId;
             this.Score = score;
@@ -10,6 +10,6 @@
 
         public string ItemId { get; }
 
-        public double Score { get; }
+        public float Score { get; }
     }
 }

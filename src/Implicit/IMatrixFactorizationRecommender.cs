@@ -12,6 +12,6 @@ namespace Implicit
 
         UserFactors GetUserFactors(string userId);
 
-        UserFactors ComputeUserFactors(Dictionary<string, double> items);
+        UserFactors ComputeUserFactors(Dictionary<string, float> items);
     }
 }

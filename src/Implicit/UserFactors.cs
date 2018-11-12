@@ -4,14 +4,14 @@ namespace Implicit
 {
     public class UserFactors
     {
-        private double? norm;
+        private float? norm;
 
-        internal UserFactors(Vector<double> vector)
+        internal UserFactors(Vector<float> vector)
         {
             this.Vector = vector;
         }
 
-        public double[] Factors
+        public float[] Factors
         {
             get
             {
@@ -19,13 +19,13 @@ namespace Implicit
             }
         }
 
-        public double Norm
+        public float Norm
         {
             get
             {
                 if (this.norm == null)
                 {
-                    var norm = this.Vector.Norm(2.0);
+                    var norm = (float)this.Vector.Norm(2.0);
 
                     if (norm == 0.0)
                     {
@@ -39,6 +39,6 @@ namespace Implicit
             }
         }
 
-        internal Vector<double> Vector { get; private set; }
+        internal Vector<float> Vector { get; private set; }
     }
 }

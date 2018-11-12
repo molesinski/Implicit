@@ -11,15 +11,15 @@ namespace Implicit.Tests
         [Fact]
         public void Factorize()
         {
-            var matrix = new double[][]
+            var matrix = new float[][]
             {
-                new double[] { 1, 1, 0, 1, 0, 0 },
-                new double[] { 0, 1, 1, 1, 0, 0 },
-                new double[] { 1, 0, 1, 0, 0, 0 },
-                new double[] { 1, 1, 0, 0, 0, 0 },
-                new double[] { 0, 0, 1, 1, 0, 1 },
-                new double[] { 0, 1, 0, 0, 0, 1 },
-                new double[] { 0, 0, 0, 0, 1, 1 },
+                new float[] { 1, 1, 0, 1, 0, 0 },
+                new float[] { 0, 1, 1, 1, 0, 0 },
+                new float[] { 1, 0, 1, 0, 0, 0 },
+                new float[] { 1, 1, 0, 0, 0, 0 },
+                new float[] { 0, 0, 1, 1, 0, 1 },
+                new float[] { 0, 1, 0, 0, 0, 1 },
+                new float[] { 0, 0, 0, 0, 1, 1 },
             };
 
             var data = Enumerable.Range(0, 7)
@@ -106,7 +106,7 @@ namespace Implicit.Tests
             }
         }
 
-        protected override AlternatingLeastSquaresRecommender CreateRecommender(Dictionary<string, Dictionary<string, double>> data)
+        protected override AlternatingLeastSquaresRecommender CreateRecommender(Dictionary<string, Dictionary<string, float>> data)
         {
             var factorizer = new AlternatingLeastSquares(factors: 3, regularization: 0, iterations: 15, useConjugateGradient: true);
             var recommender = factorizer.Fit(data);
