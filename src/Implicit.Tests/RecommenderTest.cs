@@ -40,9 +40,9 @@ namespace Implicit.Tests
             }
         }
 
-        protected abstract TRecommender CreateRecommender(Dictionary<string, Dictionary<string, float>> data);
+        protected abstract TRecommender CreateRecommender(Dictionary<string, Dictionary<string, double>> data);
 
-        protected Dictionary<string, Dictionary<string, float>> CreateCheckerBoard(int n)
+        protected Dictionary<string, Dictionary<string, double>> CreateCheckerBoard(int n)
         {
             return Enumerable.Range(0, n)
                 .SelectMany(o => Enumerable.Range(0, n), (i, j) => new { i, j })
@@ -50,7 +50,7 @@ namespace Implicit.Tests
                 .Where(o => o.i != o.j)
                 .Select(o => new { UserId = o.i.ToString(), ItemId = o.j.ToString(), Confidence = 1.0 })
                 .GroupBy(o => o.UserId)
-                .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => (float)p.Confidence));
+                .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence));
         }
     }
 }

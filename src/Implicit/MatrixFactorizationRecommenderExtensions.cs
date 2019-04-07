@@ -28,7 +28,7 @@ namespace Implicit
 
         public static IEnumerable<ItemResult> RecommendUser(
             this IMatrixFactorizationRecommender recommender,
-            Dictionary<string, float> items,
+            Dictionary<string, double> items,
             bool excludeItems = false)
         {
             if (recommender == null)
@@ -67,13 +67,13 @@ namespace Implicit
             }
 
             return recommender
-                .RankUsers(userId, userItems.Select(o => new KeyValuePair<TKey, Dictionary<string, float>>(o.Key, o.Value.ToDictionary(p => p, p => 1.0f))));
+                .RankUsers(userId, userItems.Select(o => new KeyValuePair<TKey, Dictionary<string, double>>(o.Key, o.Value.ToDictionary(p => p, p => 1.0))));
         }
 
         public static IEnumerable<TKey> RankUsers<TKey>(
             this IMatrixFactorizationRecommender recommender,
             string userId,
-            IEnumerable<KeyValuePair<TKey, Dictionary<string, float>>> userItems)
+            IEnumerable<KeyValuePair<TKey, Dictionary<string, double>>> userItems)
         {
             if (recommender == null)
             {
@@ -109,7 +109,7 @@ namespace Implicit
             }
 
             return recommender
-                .ComputeUserFactors(items.ToDictionary(o => o, o => 1.0f));
+                .ComputeUserFactors(items.ToDictionary(o => o, o => 1.0));
         }
     }
 }

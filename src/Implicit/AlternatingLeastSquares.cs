@@ -8,22 +8,22 @@ using MathNet.Numerics.LinearAlgebra;
 
 namespace Implicit
 {
-    using LabeledMatrix = Dictionary<string, Dictionary<string, float>>;
-    using SparseMatrix = Dictionary<int, Dictionary<int, float>>;
+    using LabeledMatrix = Dictionary<string, Dictionary<string, double>>;
+    using SparseMatrix = Dictionary<int, Dictionary<int, double>>;
 
     public class AlternatingLeastSquares
     {
-        internal const float Epsilon = 1e-10f;
+        internal const double Epsilon = 1e-10;
 
         private readonly int factors;
-        private readonly float regularization;
+        private readonly double regularization;
         private readonly int iterations;
         private readonly bool useConjugateGradient;
         private readonly bool calculateLossAtIteration;
 
         public AlternatingLeastSquares(
             int factors = 100,
-            float regularization = 0.01f,
+            double regularization = 0.01,
             int iterations = 15,
             bool useConjugateGradient = true,
             bool calculateLossAtIteration = false)
@@ -75,12 +75,12 @@ namespace Implicit
 
                 if (!Cui.TryGetValue(u, out var user))
                 {
-                    Cui.Add(u, user = new Dictionary<int, float>());
+                    Cui.Add(u, user = new Dictionary<int, double>());
                 }
 
                 if (!Ciu.TryGetValue(i, out var item))
                 {
-                    Ciu.Add(i, item = new Dictionary<int, float>());
+                    Ciu.Add(i, item = new Dictionary<int, double>());
                 }
 
                 user.Add(i, userItem.Confidence);
@@ -89,10 +89,10 @@ namespace Implicit
 
             var users = userMap.Count;
             var items = itemMap.Count;
-            var loss = 0.0f;
+            var loss = 0.0;
 
-            var userFactors = Matrix<float>.Build.Random(users, this.factors, new ContinuousUniform(0, 0.01));
-            var itemFactors = Matrix<float>.Build.Random(items, this.factors, new ContinuousUniform(0, 0.01));
+            var userFactors = Matrix<double>.Build.Random(users, this.factors, new ContinuousUniform(0, 0.01));
+            var itemFactors = Matrix<double>.Build.Random(items, this.factors, new ContinuousUniform(0, 0.01));
 
             for (var iteration = 0; iteration < this.iterations; iteration++)
             {
@@ -123,8 +123,8 @@ namespace Implicit
             }
 
             return new AlternatingLeastSquaresRecommender(
-                this.factors,
-                this.regularization,
+                factors,
+                regularization,
                 loss,
                 userMap,
                 itemMap,
@@ -132,18 +132,18 @@ namespace Implicit
                 itemFactors);
         }
 
-        internal static Vector<float> UserFactor(Matrix<float> Y, Matrix<float> YtY, SparseMatrix Cui, int u, float regularization, int factors)
+        internal static Vector<double> UserFactor(Matrix<double> Y, Matrix<double> YtY, SparseMatrix Cui, int u, double regularization, int factors)
         {
             var equation = UserLinearEquation(Y, YtY, Cui, u, regularization, factors);
 
             return equation.A.Solve(equation.b);
         }
 
-        private static LinearEquation UserLinearEquation(Matrix<float> Y, Matrix<float> YtY, SparseMatrix Cui, int u, float regularization, int factors)
+        private static LinearEquation UserLinearEquation(Matrix<double> Y, Matrix<double> YtY, SparseMatrix Cui, int u, double regularization, int factors)
         {
-            var yi = Vector<float>.Build.Dense(factors);
-            var A = YtY.Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
-            var b = Vector<float>.Build.Dense(factors);
+            var yi = Vector<double>.Build.Dense(factors);
+            var A = YtY.Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var b = Vector<double>.Build.Dense(factors);
 
             foreach (var pair in Cui[u])
             {
@@ -158,7 +158,7 @@ namespace Implicit
             return new LinearEquation(A, b);
         }
 
-        private static void LeastSquares(SparseMatrix Cui, Matrix<float> X, Matrix<float> Y, float regularization)
+        private static void LeastSquares(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y);
@@ -172,21 +172,21 @@ namespace Implicit
                 });
         }
 
-        private static void LeastSquaresFast(SparseMatrix Cui, Matrix<float> X, Matrix<float> Y, float regularization)
+        private static void LeastSquaresFast(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
+            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
                 X.RowCount,
                 () => new
                 {
-                    xu = Vector<float>.Build.Dense(factors),
-                    yi = Vector<float>.Build.Dense(factors),
-                    A = Matrix<float>.Build.Dense(factors, factors),
-                    b = Vector<float>.Build.Dense(factors),
-                    op = Matrix<float>.Build.Dense(factors, factors),
+                    xu = Vector<double>.Build.Dense(factors),
+                    yi = Vector<double>.Build.Dense(factors),
+                    A = Matrix<double>.Build.Dense(factors, factors),
+                    b = Vector<double>.Build.Dense(factors),
+                    op = Matrix<double>.Build.Dense(factors, factors),
                 },
                 (u, _, s) =>
                 {
@@ -216,11 +216,11 @@ namespace Implicit
                 _ => { });
         }
 
-        private static void LeastSquaresConjugateGradient(SparseMatrix Cui, Matrix<float> X, Matrix<float> Y, float regularization, int iterations = 3)
+        private static void LeastSquaresConjugateGradient(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
         {
             var users = X.RowCount;
             var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
+            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(0, users, u =>
             {
@@ -233,7 +233,7 @@ namespace Implicit
                     var confidence = pair.Value;
                     var yi = Y.Row(i);
 
-                    r.Add(yi.Multiply(confidence - ((confidence - 1) * yi.DotProduct(xu))), r);
+                    r.Add(yi.Multiply(confidence - (confidence - 1) * yi.DotProduct(xu)), r);
                 }
 
                 var p = r.Clone();
@@ -272,22 +272,22 @@ namespace Implicit
             });
         }
 
-        private static void LeastSquaresConjugateGradientFast(SparseMatrix Cui, Matrix<float> X, Matrix<float> Y, float regularization, int iterations = 3)
+        private static void LeastSquaresConjugateGradientFast(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
         {
             var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
+            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
                 X.RowCount,
                 () => new
                 {
-                    xu = Vector<float>.Build.Dense(factors),
-                    yi = Vector<float>.Build.Dense(factors),
-                    r = Vector<float>.Build.Dense(factors),
-                    p = Vector<float>.Build.Dense(factors),
-                    pm = Vector<float>.Build.Dense(factors),
-                    Ap = Vector<float>.Build.Dense(factors),
+                    xu = Vector<double>.Build.Dense(factors),
+                    yi = Vector<double>.Build.Dense(factors),
+                    r = Vector<double>.Build.Dense(factors),
+                    p = Vector<double>.Build.Dense(factors),
+                    pm = Vector<double>.Build.Dense(factors),
+                    Ap = Vector<double>.Build.Dense(factors),
                 },
                 (u, _, s) =>
                 {
@@ -301,7 +301,7 @@ namespace Implicit
                         var confidence = pair.Value;
                         Y.Row(i, s.yi);
 
-                        s.yi.Multiply(confidence - ((confidence - 1) * s.yi.DotProduct(s.xu)), s.yi);
+                        s.yi.Multiply(confidence - (confidence - 1) * s.yi.DotProduct(s.xu), s.yi);
                         s.r.Add(s.yi, s.r);
                     }
 
@@ -348,19 +348,19 @@ namespace Implicit
                 _ => { });
         }
 
-        private static float CalculateLoss(SparseMatrix Cui, Matrix<float> X, Matrix<float> Y, float regularization)
+        private static double CalculateLoss(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var nnz = 0;
-            var loss = 0.0f;
-            var total_confidence = 0.0f;
-            var item_norm = 0.0f;
-            var user_norm = 0.0f;
+            var loss = 0.0;
+            var total_confidence = 0.0;
+            var item_norm = 0.0;
+            var user_norm = 0.0;
 
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y);
-            var xu = Vector<float>.Build.Dense(factors);
-            var yi = Vector<float>.Build.Dense(factors);
-            var r = Vector<float>.Build.Dense(factors);
+            var xu = Vector<double>.Build.Dense(factors);
+            var yi = Vector<double>.Build.Dense(factors);
+            var r = Vector<double>.Build.Dense(factors);
 
             for (var u = 0; u < X.RowCount; u++)
             {
@@ -373,7 +373,7 @@ namespace Implicit
                     var confidence = pair.Value;
                     Y.Row(i, yi);
 
-                    var temp = ((confidence - 1) * yi.DotProduct(xu)) - (2 * confidence);
+                    var temp = (confidence - 1) * yi.DotProduct(xu) - (2 * confidence);
 
                     r.Add(yi.Multiply(temp), r);
 
@@ -395,33 +395,33 @@ namespace Implicit
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
+            return loss / (total_confidence + Y.RowCount * X.RowCount - nnz);
         }
 
-        private static float CalculateLossFast(SparseMatrix Cui, Matrix<float> X, Matrix<float> Y, float regularization)
+        private static double CalculateLossFast(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var mutex = new object();
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y);
 
             var nnz = 0;
-            var loss = 0.0f;
-            var total_confidence = 0.0f;
-            var item_norm = 0.0f;
-            var user_norm = 0.0f;
+            var loss = 0.0;
+            var total_confidence = 0.0;
+            var item_norm = 0.0;
+            var user_norm = 0.0;
 
             Parallel.For(
                 0,
                 X.RowCount,
                 () => new
                 {
-                    xu = Vector<float>.Build.Dense(factors),
-                    yi = Vector<float>.Build.Dense(factors),
-                    r = Vector<float>.Build.Dense(factors),
+                    xu = Vector<double>.Build.Dense(factors),
+                    yi = Vector<double>.Build.Dense(factors),
+                    r = Vector<double>.Build.Dense(factors),
                     nnz = new int[1],
-                    loss = new float[1],
-                    total_confidence = new float[1],
-                    user_norm = new float[1],
+                    loss = new double[1],
+                    total_confidence = new double[1],
+                    user_norm = new double[1],
                 },
                 (u, _, s) =>
                 {
@@ -435,7 +435,7 @@ namespace Implicit
                         var confidence = pair.Value;
                         Y.Row(i, s.yi);
 
-                        var temp = ((confidence - 1) * s.yi.DotProduct(s.xu)) - (2 * confidence);
+                        var temp = (confidence - 1) * s.yi.DotProduct(s.xu) - (2 * confidence);
 
                         s.yi.Multiply(temp, s.yi);
                         s.r.Add(s.yi, s.r);
@@ -466,8 +466,8 @@ namespace Implicit
                 Y.RowCount,
                 () => new
                 {
-                    yi = Vector<float>.Build.Dense(factors),
-                    item_norm = new float[1],
+                    yi = Vector<double>.Build.Dense(factors),
+                    item_norm = new double[1],
                 },
                 (i, _, s) =>
                 {
@@ -487,20 +487,20 @@ namespace Implicit
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
+            return loss / (total_confidence + Y.RowCount * X.RowCount - nnz);
         }
 
         private struct LinearEquation
         {
-            public LinearEquation(Matrix<float> A, Vector<float> b)
+            public LinearEquation(Matrix<double> A, Vector<double> b)
             {
                 this.A = A;
                 this.b = b;
             }
 
-            public Matrix<float> A { get; }
+            public Matrix<double> A { get; }
 
-            public Vector<float> b { get; }
+            public Vector<double> b { get; }
         }
     }
 }

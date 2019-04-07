@@ -10,23 +10,23 @@ namespace Implicit
     public class AlternatingLeastSquaresRecommender : IRecommender, IMatrixFactorizationRecommender
     {
         private readonly int factors;
-        private readonly float regularization;
-        private readonly float loss;
+        private readonly double regularization;
+        private readonly double loss;
         private readonly Dictionary<string, int> userMap;
         private readonly Dictionary<string, int> itemMap;
-        private readonly Matrix<float> userFactors;
-        private readonly Matrix<float> itemFactors;
-        private Vector<float> itemNorms;
-        private Matrix<float> yty;
+        private readonly Matrix<double> userFactors;
+        private readonly Matrix<double> itemFactors;
+        private Vector<double> itemNorms;
+        private Matrix<double> yty;
 
         internal AlternatingLeastSquaresRecommender(
             int factors,
-            float regularization,
-            float loss,
+            double regularization,
+            double loss,
             Dictionary<string, int> userMap,
             Dictionary<string, int> itemMap,
-            Matrix<float> userFactors,
-            Matrix<float> itemFactors)
+            Matrix<double> userFactors,
+            Matrix<double> itemFactors)
         {
             this.factors = factors;
             this.regularization = regularization;
@@ -45,16 +45,16 @@ namespace Implicit
             }
 
             this.factors = int.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
-            this.regularization = float.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
-            this.loss = float.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
+            this.regularization = double.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
+            this.loss = double.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
 
             var users = int.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
             var items = int.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
 
             this.userMap = new Dictionary<string, int>();
             this.itemMap = new Dictionary<string, int>();
-            this.userFactors = Matrix<float>.Build.Dense(users, this.factors);
-            this.itemFactors = Matrix<float>.Build.Dense(items, this.factors);
+            this.userFactors = Matrix<double>.Build.Dense(users, this.factors);
+            this.itemFactors = Matrix<double>.Build.Dense(items, this.factors);
 
             for (var u = 0; u < users; u++)
             {
@@ -62,7 +62,7 @@ namespace Implicit
                 var parts = line.Split('\t');
 
                 this.userMap.Add(parts.First(), u);
-                this.userFactors.SetRow(u, parts.Skip(1).Select(o => float.Parse(o, CultureInfo.InvariantCulture)).ToArray());
+                this.userFactors.SetRow(u, parts.Skip(1).Select(o => double.Parse(o, CultureInfo.InvariantCulture)).ToArray());
             }
 
             for (var i = 0; i < items; i++)
@@ -71,7 +71,7 @@ namespace Implicit
                 var parts = line.Split('\t');
 
                 this.itemMap.Add(parts.First(), i);
-                this.itemFactors.SetRow(i, parts.Skip(1).Select(o => float.Parse(o, CultureInfo.InvariantCulture)).ToArray());
+                this.itemFactors.SetRow(i, parts.Skip(1).Select(o => double.Parse(o, CultureInfo.InvariantCulture)).ToArray());
             }
         }
 
@@ -82,20 +82,23 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(reader));
             }
 
+            var version = reader.ReadInt32();
+            var useSinglePrecision = reader.ReadBoolean();
+
             this.factors = reader.ReadInt32();
-            this.regularization = reader.ReadSingle();
-            this.loss = reader.ReadSingle();
+            this.regularization = reader.ReadDouble();
+            this.loss = reader.ReadDouble();
 
             var users = reader.ReadInt32();
             var items = reader.ReadInt32();
 
             this.userMap = new Dictionary<string, int>();
             this.itemMap = new Dictionary<string, int>();
-            this.userFactors = Matrix<float>.Build.Dense(users, this.factors);
-            this.itemFactors = Matrix<float>.Build.Dense(items, this.factors);
+            this.userFactors = Matrix<double>.Build.Dense(users, this.factors);
+            this.itemFactors = Matrix<double>.Build.Dense(items, this.factors);
 
-            var xu = Vector<float>.Build.Dense(this.factors);
-            var yi = Vector<float>.Build.Dense(this.factors);
+            var xu = Vector<double>.Build.Dense(this.factors);
+            var yi = Vector<double>.Build.Dense(this.factors);
 
             for (var u = 0; u < users; u++)
             {
@@ -103,7 +106,14 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    xu[f] = reader.ReadSingle();
+                    if (useSinglePrecision)
+                    {
+                        xu[f] = reader.ReadSingle();
+                    }
+                    else
+                    {
+                        xu[f] = reader.ReadDouble();
+                    }
                 }
 
                 this.userMap.Add(userId, u);
@@ -116,7 +126,14 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    yi[f] = reader.ReadSingle();
+                    if (useSinglePrecision)
+                    {
+                        yi[f] = reader.ReadSingle();
+                    }
+                    else
+                    {
+                        yi[f] = reader.ReadDouble();
+                    }
                 }
 
                 this.itemMap.Add(itemId, i);
@@ -124,35 +141,17 @@ namespace Implicit
             }
         }
 
-        public int Factors
-        {
-            get
-            {
-                return this.factors;
-            }
-        }
+        public int Factors => this.factors;
 
-        public float Regularization
-        {
-            get
-            {
-                return this.regularization;
-            }
-        }
+        public double Regularization => this.regularization;
 
-        public float Loss
-        {
-            get
-            {
-                return this.loss;
-            }
-        }
+        public double Loss => this.loss;
 
-        public Dictionary<string, float[]> UserFactors
+        public Dictionary<string, double[]> UserFactors
         {
             get
             {
-                var xu = Vector<float>.Build.Dense(this.factors);
+                var xu = Vector<double>.Build.Dense(this.factors);
 
                 return this.userMap
                     .ToDictionary(
@@ -166,11 +165,11 @@ namespace Implicit
             }
         }
 
-        public Dictionary<string, float[]> ItemFactors
+        public Dictionary<string, double[]> ItemFactors
         {
             get
             {
-                var yi = Vector<float>.Build.Dense(this.factors);
+                var yi = Vector<double>.Build.Dense(this.factors);
 
                 return this.itemMap
                     .ToDictionary(
@@ -184,13 +183,13 @@ namespace Implicit
             }
         }
 
-        private Vector<float> ItemNorms
+        private Vector<double> ItemNorms
         {
             get
             {
                 if (this.itemNorms == null)
                 {
-                    var itemNorms = this.itemFactors.RowNorms(2.0).ToSingle();
+                    var itemNorms = itemFactors.RowNorms(2.0);
 
                     for (var i = 0; i < itemNorms.Count; i++)
                     {
@@ -207,7 +206,7 @@ namespace Implicit
             }
         }
 
-        private Matrix<float> YtY
+        private Matrix<double> YtY
         {
             get
             {
@@ -249,7 +248,7 @@ namespace Implicit
             }
 
             var xu = user.Vector;
-            var yi = Vector<float>.Build.Dense(this.factors);
+            var yi = Vector<double>.Build.Dense(this.factors);
 
             return this.itemMap
                 .Select(
@@ -276,7 +275,7 @@ namespace Implicit
             }
 
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
-            var yj = Vector<float>.Build.Dense(this.factors);
+            var yj = Vector<double>.Build.Dense(this.factors);
 
             return this.itemMap
                 .Select(
@@ -361,7 +360,7 @@ namespace Implicit
             return user;
         }
 
-        public UserFactors ComputeUserFactors(Dictionary<string, float> items)
+        public UserFactors ComputeUserFactors(Dictionary<string, double> items)
         {
             if (items == null)
             {
@@ -388,8 +387,8 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(writer));
             }
 
-            var xu = Vector<float>.Build.Dense(this.factors);
-            var yi = Vector<float>.Build.Dense(this.factors);
+            var xu = Vector<double>.Build.Dense(this.factors);
+            var yi = Vector<double>.Build.Dense(this.factors);
 
             writer.WriteLine(this.factors.ToString(CultureInfo.InvariantCulture));
             writer.WriteLine(this.regularization.ToString(CultureInfo.InvariantCulture));
@@ -428,15 +427,18 @@ namespace Implicit
             }
         }
 
-        public void Save(BinaryWriter writer)
+        public void Save(BinaryWriter writer, bool useSinglePrecision = false)
         {
             if (writer == null)
             {
                 throw new ArgumentNullException(nameof(writer));
             }
 
-            var xu = Vector<float>.Build.Dense(this.factors);
-            var yi = Vector<float>.Build.Dense(this.factors);
+            var xu = Vector<double>.Build.Dense(this.factors);
+            var yi = Vector<double>.Build.Dense(this.factors);
+
+            writer.Write(0);
+            writer.Write(useSinglePrecision);
 
             writer.Write(this.factors);
             writer.Write(this.regularization);
@@ -452,7 +454,14 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    writer.Write(xu[f]);
+                    if (useSinglePrecision)
+                    {
+                        writer.Write((float)xu[f]);
+                    }
+                    else
+                    {
+                        writer.Write(xu[f]);
+                    }
                 }
             }
 
@@ -464,7 +473,14 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    writer.Write(yi[f]);
+                    if (useSinglePrecision)
+                    {
+                        writer.Write((float)yi[f]);
+                    }
+                    else
+                    {
+                        writer.Write(yi[f]);
+                    }
                 }
             }
         }

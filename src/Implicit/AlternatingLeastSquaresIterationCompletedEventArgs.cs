@@ -4,7 +4,7 @@ namespace Implicit
 {
     public class AlternatingLeastSquaresIterationCompletedEventArgs : EventArgs
     {
-        public AlternatingLeastSquaresIterationCompletedEventArgs(int iteration, float loss, TimeSpan elapsed)
+        public AlternatingLeastSquaresIterationCompletedEventArgs(int iteration, double loss, TimeSpan elapsed)
         {
             this.Iteration = iteration;
             this.Loss = loss;
@@ -13,7 +13,7 @@ namespace Implicit
 
         public int Iteration { get; }
 
-        public float Loss { get; }
+        public double Loss { get; }
 
         public TimeSpan Elapsed { get; }
     }
