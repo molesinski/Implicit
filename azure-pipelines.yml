@@ -1,0 +1,52 @@
+﻿variables:
+  major: 0
+  minor: 3
+  patch: $[counter("versioncounter_0_3", 0)]
+
+name: $(major).$(minor).$(patch)
+
+pool:
+  vmImage: vs2017-win2016
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - src/Implicit
+
+pr: none
+
+steps:
+- script: |
+    dotnet restore "src/Implicit/Implicit.csproj"
+    dotnet restore "src/Implicit.Tests/Implicit.Tests.csproj"
+    dotnet build "src/Implicit/Implicit.csproj" --no-restore -c Release /p:Version=$(major).$(minor).$(patch)
+    dotnet build "src/Implicit.Tests/Implicit.Tests.csproj" --no-restore -c Release /p:Version=$(major).$(minor).$(patch)
+  displayName: Restore and build projects
+
+steps:
+- script: |
+    dotnet test "src/Implicit.Tests/Implicit.Tests.csproj" --no-build -c Release -l trx -r $(Common.TestResultsDirectory) /p:Version=$(major).$(minor).$(patch)
+  displayName: Run tests
+
+- task: PublishTestResults@2
+  inputs:
+    searchFolder: "$(Common.TestResultsDirectory)"
+    testRunner: VSTest
+    testResultsFiles: "**/*.trx"
+  condition: succeededOrFailed()
+  displayName: Publish test results
+
+- script: |
+    dotnet pack "src/Implicit/Implicit.csproj" --no-build -c Release -o $(Build.ArtifactStagingDirectory) /p:Version=$(major).$(minor).$(patch)
+  displayName: Pack project
+
+- task: NuGetCommand@2
+  inputs:
+    command: push
+    nuGetFeedType: external
+    publishFeedCredentials: "Implicit"
+  displayName: Push package

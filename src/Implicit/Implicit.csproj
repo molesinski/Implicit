@@ -5,16 +5,18 @@
     <TargetFrameworks>net461;netstandard1.3;netstandard2.0</TargetFrameworks>
     <NetStandardImplicitPackageVersion>2.0.3</NetStandardImplicitPackageVersion>
     <IsPackable>true</IsPackable>
-    <Version>0.3.0</Version>
     <Authors>Maciej Olesiński</Authors>
     <Description>Fast .NET Collaborative Filtering for Implicit Datasets.</Description>
     <RepositoryUrl>https://github.com/molesinski/Implicit</RepositoryUrl>
     <PackageId>Implicit</PackageId>
     <PackageProjectUrl>https://github.com/molesinski/Implicit</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/molesinski/Implicit/blob/master/LICENSE</PackageLicenseUrl>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath=""/>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="4.7.0" />
