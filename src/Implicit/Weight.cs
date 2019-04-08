@@ -76,11 +76,11 @@ namespace Implicit
 
             var averageLength = data.Average(o => o.Value.Count);
             var lengthNorm = data
-                .ToDictionary(o => o.Key, o => (1.0 - B) + B * o.Value.Count / averageLength);
+                .ToDictionary(o => o.Key, o => 1.0 - B + (B * o.Value.Count / averageLength));
 
             var weighted = data
                 .SelectMany(o => o.Value, (o, p) => new { UserId = o.Key, ItemId = p.Key, Confidence = p.Value })
-                .Select(o => new { o.UserId, o.ItemId, Confidence = o.Confidence * (K1 + 1.0) / (K1 * lengthNorm[o.UserId] + o.Confidence) * idf[o.ItemId] })
+                .Select(o => new { o.UserId, o.ItemId, Confidence = o.Confidence * (K1 + 1.0) / ((K1 * lengthNorm[o.UserId]) + o.Confidence) * idf[o.ItemId] })
                 .GroupBy(o => o.UserId)
                 .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence));
 
@@ -114,8 +114,8 @@ namespace Implicit
                     userItem =>
                     {
                         var idf = Math.Log(n) - Math.Log(1 + items[userItem.ItemId]);
-                        var lengthNorm = (1.0 - B) + B * users[userItem.UserId] / averageLength;
-                        var confidence = userItem.Confidence * (K1 + 1.0) / (K1 * lengthNorm + userItem.Confidence) * idf;
+                        var lengthNorm = 1.0 - B + (B * users[userItem.UserId] / averageLength);
+                        var confidence = userItem.Confidence * (K1 + 1.0) / ((K1 * lengthNorm) + userItem.Confidence) * idf;
 
                         return new UserItem(userItem.UserId, userItem.ItemId, confidence);
                     });

@@ -123,8 +123,8 @@ namespace Implicit
             }
 
             return new AlternatingLeastSquaresRecommender(
-                factors,
-                regularization,
+                this.factors,
+                this.regularization,
                 loss,
                 userMap,
                 itemMap,
@@ -233,7 +233,7 @@ namespace Implicit
                     var confidence = pair.Value;
                     var yi = Y.Row(i);
 
-                    r.Add(yi.Multiply(confidence - (confidence - 1) * yi.DotProduct(xu)), r);
+                    r.Add(yi.Multiply(confidence - ((confidence - 1) * yi.DotProduct(xu))), r);
                 }
 
                 var p = r.Clone();
@@ -301,7 +301,7 @@ namespace Implicit
                         var confidence = pair.Value;
                         Y.Row(i, s.yi);
 
-                        s.yi.Multiply(confidence - (confidence - 1) * s.yi.DotProduct(s.xu), s.yi);
+                        s.yi.Multiply(confidence - ((confidence - 1) * s.yi.DotProduct(s.xu)), s.yi);
                         s.r.Add(s.yi, s.r);
                     }
 
@@ -373,7 +373,7 @@ namespace Implicit
                     var confidence = pair.Value;
                     Y.Row(i, yi);
 
-                    var temp = (confidence - 1) * yi.DotProduct(xu) - (2 * confidence);
+                    var temp = ((confidence - 1) * yi.DotProduct(xu)) - (2 * confidence);
 
                     r.Add(yi.Multiply(temp), r);
 
@@ -395,7 +395,7 @@ namespace Implicit
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + Y.RowCount * X.RowCount - nnz);
+            return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
         }
 
         private static double CalculateLossFast(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
@@ -435,7 +435,7 @@ namespace Implicit
                         var confidence = pair.Value;
                         Y.Row(i, s.yi);
 
-                        var temp = (confidence - 1) * s.yi.DotProduct(s.xu) - (2 * confidence);
+                        var temp = ((confidence - 1) * s.yi.DotProduct(s.xu)) - (2 * confidence);
 
                         s.yi.Multiply(temp, s.yi);
                         s.r.Add(s.yi, s.r);
@@ -487,7 +487,7 @@ namespace Implicit
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + Y.RowCount * X.RowCount - nnz);
+            return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
         }
 
         private struct LinearEquation

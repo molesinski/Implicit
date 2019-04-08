@@ -82,9 +82,6 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(reader));
             }
 
-            var version = reader.ReadInt32();
-            var useSinglePrecision = reader.ReadBoolean();
-
             this.factors = reader.ReadInt32();
             this.regularization = reader.ReadDouble();
             this.loss = reader.ReadDouble();
@@ -106,14 +103,7 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    if (useSinglePrecision)
-                    {
-                        xu[f] = reader.ReadSingle();
-                    }
-                    else
-                    {
-                        xu[f] = reader.ReadDouble();
-                    }
+                    xu[f] = reader.ReadDouble();
                 }
 
                 this.userMap.Add(userId, u);
@@ -126,14 +116,7 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    if (useSinglePrecision)
-                    {
-                        yi[f] = reader.ReadSingle();
-                    }
-                    else
-                    {
-                        yi[f] = reader.ReadDouble();
-                    }
+                    yi[f] = reader.ReadDouble();
                 }
 
                 this.itemMap.Add(itemId, i);
@@ -141,11 +124,29 @@ namespace Implicit
             }
         }
 
-        public int Factors => this.factors;
+        public int Factors
+        {
+            get
+            {
+                return this.factors;
+            }
+        }
 
-        public double Regularization => this.regularization;
+        public double Regularization
+        {
+            get
+            {
+                return this.regularization;
+            }
+        }
 
-        public double Loss => this.loss;
+        public double Loss
+        {
+            get
+            {
+                return this.loss;
+            }
+        }
 
         public Dictionary<string, double[]> UserFactors
         {
@@ -189,7 +190,7 @@ namespace Implicit
             {
                 if (this.itemNorms == null)
                 {
-                    var itemNorms = itemFactors.RowNorms(2.0);
+                    var itemNorms = this.itemFactors.RowNorms(2.0);
 
                     for (var i = 0; i < itemNorms.Count; i++)
                     {
@@ -405,7 +406,7 @@ namespace Implicit
                 for (var i = 0; i < this.factors; i++)
                 {
                     writer.Write('\t');
-                    writer.Write(xu[i].ToString(CultureInfo.InvariantCulture));
+                    writer.Write(xu[i].ToString("R", CultureInfo.InvariantCulture));
                 }
 
                 writer.WriteLine();
@@ -420,14 +421,14 @@ namespace Implicit
                 for (var i = 0; i < this.factors; i++)
                 {
                     writer.Write('\t');
-                    writer.Write(yi[i].ToString(CultureInfo.InvariantCulture));
+                    writer.Write(yi[i].ToString("R", CultureInfo.InvariantCulture));
                 }
 
                 writer.WriteLine();
             }
         }
 
-        public void Save(BinaryWriter writer, bool useSinglePrecision = false)
+        public void Save(BinaryWriter writer)
         {
             if (writer == null)
             {
@@ -436,9 +437,6 @@ namespace Implicit
 
             var xu = Vector<double>.Build.Dense(this.factors);
             var yi = Vector<double>.Build.Dense(this.factors);
-
-            writer.Write(0);
-            writer.Write(useSinglePrecision);
 
             writer.Write(this.factors);
             writer.Write(this.regularization);
@@ -454,14 +452,7 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    if (useSinglePrecision)
-                    {
-                        writer.Write((float)xu[f]);
-                    }
-                    else
-                    {
-                        writer.Write(xu[f]);
-                    }
+                    writer.Write(xu[f]);
                 }
             }
 
@@ -473,14 +464,7 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    if (useSinglePrecision)
-                    {
-                        writer.Write((float)yi[f]);
-                    }
-                    else
-                    {
-                        writer.Write(yi[f]);
-                    }
+                    writer.Write(yi[f]);
                 }
             }
         }
