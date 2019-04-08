@@ -27,7 +27,6 @@ steps:
     dotnet build "src/Implicit.Tests/Implicit.Tests.csproj" --no-restore -c Release /p:Version=$(major).$(minor).$(patch)
   displayName: Restore and build projects
 
-steps:
 - script: |
     dotnet test "src/Implicit.Tests/Implicit.Tests.csproj" --no-build -c Release -l trx -r $(Common.TestResultsDirectory) /p:Version=$(major).$(minor).$(patch)
   displayName: Run tests

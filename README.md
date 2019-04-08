@@ -1,7 +1,7 @@
 ﻿Implicit
 ========
 
-[![Build status](https://ci.appveyor.com/api/projects/status/1214xw9xk8ts0j9e?svg=true)](https://ci.appveyor.com/project/MaciejOlesiski/implicit)
+[![Build Status](https://dev.azure.com/molesinski/Implicit/_apis/build/status/Implicit?branchName=master)](https://dev.azure.com/molesinski/Implicit/_build/latest?definitionId=1&branchName=master)
 [![License MIT](https://img.shields.io/github/license/molesinski/implicit.svg)](https://github.com/molesinski/Implicit/blob/master/LICENSE)
 
 Fast .NET Collaborative Filtering for Implicit Datasets.
