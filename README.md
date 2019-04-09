@@ -2,6 +2,7 @@
 ========
 
 [![Build Status](https://dev.azure.com/molesinski/Implicit/_apis/build/status/Implicit?branchName=master)](https://dev.azure.com/molesinski/Implicit/_build/latest?definitionId=1&branchName=master)
+[![Latest version](https://img.shields.io/nuget/v/Implicit.svg)](https://www.nuget.org/packages/Implicit)
 [![License MIT](https://img.shields.io/github/license/molesinski/implicit.svg)](https://github.com/molesinski/Implicit/blob/master/LICENSE)
 
 Fast .NET Collaborative Filtering for Implicit Datasets.
