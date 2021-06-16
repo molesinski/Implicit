@@ -1,6 +1,6 @@
 ﻿namespace Implicit
 {
-    public class ItemResult
+    public struct ItemResult
     {
         public ItemResult(string itemId, double score)
         {

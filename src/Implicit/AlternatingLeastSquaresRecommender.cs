@@ -251,16 +251,18 @@ namespace Implicit
             var xu = user.Vector;
             var yi = Vector<double>.Build.Dense(this.factors);
 
-            return this.itemMap
-                .Select(
-                    o =>
-                    {
-                        this.itemFactors.Row(o.Value, yi);
+            var result = new List<ItemResult>(this.itemMap.Count);
 
-                        return new ItemResult(o.Key, xu.DotProduct(yi));
-                    })
-                .OrderByDescending(o => o.Score)
-                .ToList();
+            foreach (var item in this.itemMap)
+            {
+                this.itemFactors.Row(item.Value, yi);
+
+                result.Add(new ItemResult(item.Key, xu.DotProduct(yi)));
+            }
+
+            result.Sort((a, b) => -1 * a.Score.CompareTo(b.Score));
+
+            return result;
         }
 
         public IEnumerable<ItemResult> RecommendItem(string itemId)
@@ -278,18 +280,22 @@ namespace Implicit
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
             var yj = Vector<double>.Build.Dense(this.factors);
 
-            return this.itemMap
-                .Select(
-                    o =>
-                    {
-                        var j = o.Value;
-                        this.itemFactors.Row(j, yj);
+            var result = new List<ItemResult>(this.itemMap.Count);
 
-                        return new ItemResult(o.Key, yi.DotProduct(yj) / this.ItemNorms[j]);
-                    })
-                .OrderByDescending(o => o.Score)
-                .Where(o => o.ItemId != itemId)
-                .ToList();
+            foreach (var item in this.itemMap)
+            {
+                if (item.Key != itemId)
+                {
+                    var j = item.Value;
+                    this.itemFactors.Row(j, yj);
+
+                    result.Add(new ItemResult(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
+                }
+            }
+
+            result.Sort((a, b) => -1 * a.Score.CompareTo(b.Score));
+
+            return result;
         }
 
         public IEnumerable<TKey> RankUsers<TKey>(string userId, IEnumerable<KeyValuePair<TKey, UserFactors>> users)
