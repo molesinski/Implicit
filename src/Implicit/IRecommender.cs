@@ -4,8 +4,8 @@ namespace Implicit
 {
     public interface IRecommender
     {
-        IEnumerable<ItemResult> RecommendUser(string userId);
+        List<ItemResult> RecommendUser(string userId);
 
-        IEnumerable<ItemResult> RecommendItem(string itemId);
+        List<ItemResult> RecommendItem(string itemId);
     }
 }

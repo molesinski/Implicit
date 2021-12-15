@@ -6,7 +6,7 @@ namespace Implicit
 {
     public static class MatrixFactorizationRecommenderExtensions
     {
-        public static IEnumerable<ItemResult> RecommendUser(
+        public static List<ItemResult> RecommendUser(
             this IMatrixFactorizationRecommender recommender,
             IEnumerable<string> items,
             bool excludeItems = false)
@@ -21,12 +21,19 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender
-                .RecommendUser(recommender.ComputeUserFactors(items))
-                .Where(o => !excludeItems || !items.Contains(o.ItemId));
+            var result = recommender.RecommendUser(recommender.ComputeUserFactors(items));
+
+            if (excludeItems)
+            {
+                var excludeSet = new HashSet<string>(items);
+
+                result.RemoveAll(o => excludeSet.Contains(o.ItemId));
+            }
+
+            return result;
         }
 
-        public static IEnumerable<ItemResult> RecommendUser(
+        public static List<ItemResult> RecommendUser(
             this IMatrixFactorizationRecommender recommender,
             Dictionary<string, double> items,
             bool excludeItems = false)
@@ -41,12 +48,19 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender
-                .RecommendUser(recommender.ComputeUserFactors(items))
-                .Where(o => !excludeItems || !items.ContainsKey(o.ItemId));
+            var result = recommender.RecommendUser(recommender.ComputeUserFactors(items));
+
+            if (excludeItems)
+            {
+                var excludeSet = new HashSet<string>(items.Keys);
+
+                result.RemoveAll(o => excludeSet.Contains(o.ItemId));
+            }
+
+            return result;
         }
 
-        public static IEnumerable<TKey> RankUsers<TKey>(
+        public static List<TKey> RankUsers<TKey>(
             this IMatrixFactorizationRecommender recommender,
             string userId,
             IEnumerable<KeyValuePair<TKey, IEnumerable<string>>> userItems)
@@ -70,7 +84,7 @@ namespace Implicit
                 .RankUsers(userId, userItems.Select(o => new KeyValuePair<TKey, Dictionary<string, double>>(o.Key, o.Value.ToDictionary(p => p, p => 1.0))));
         }
 
-        public static IEnumerable<TKey> RankUsers<TKey>(
+        public static List<TKey> RankUsers<TKey>(
             this IMatrixFactorizationRecommender recommender,
             string userId,
             IEnumerable<KeyValuePair<TKey, Dictionary<string, double>>> userItems)

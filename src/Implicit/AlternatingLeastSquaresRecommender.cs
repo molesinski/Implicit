@@ -223,7 +223,7 @@ namespace Implicit
             }
         }
 
-        public IEnumerable<ItemResult> RecommendUser(string userId)
+        public List<ItemResult> RecommendUser(string userId)
         {
             if (userId == null)
             {
@@ -232,7 +232,7 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return Enumerable.Empty<ItemResult>();
+                return new List<ItemResult>();
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
@@ -241,7 +241,7 @@ namespace Implicit
             return this.RecommendUser(user);
         }
 
-        public IEnumerable<ItemResult> RecommendUser(UserFactors user)
+        public List<ItemResult> RecommendUser(UserFactors user)
         {
             if (user == null)
             {
@@ -265,7 +265,7 @@ namespace Implicit
             return result;
         }
 
-        public IEnumerable<ItemResult> RecommendItem(string itemId)
+        public List<ItemResult> RecommendItem(string itemId)
         {
             if (itemId == null)
             {
@@ -274,7 +274,7 @@ namespace Implicit
 
             if (!this.itemMap.ContainsKey(itemId))
             {
-                return Enumerable.Empty<ItemResult>();
+                return new List<ItemResult>();
             }
 
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
@@ -298,7 +298,7 @@ namespace Implicit
             return result;
         }
 
-        public IEnumerable<TKey> RankUsers<TKey>(string userId, IEnumerable<KeyValuePair<TKey, UserFactors>> users)
+        public List<TKey> RankUsers<TKey>(string userId, IEnumerable<KeyValuePair<TKey, UserFactors>> users)
         {
             if (userId == null)
             {
@@ -312,7 +312,7 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return Enumerable.Empty<TKey>();
+                return new List<TKey>();
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
@@ -321,7 +321,7 @@ namespace Implicit
             return this.RankUsers(user, users);
         }
 
-        public IEnumerable<TKey> RankUsers<TKey>(UserFactors user, IEnumerable<KeyValuePair<TKey, UserFactors>> users)
+        public List<TKey> RankUsers<TKey>(UserFactors user, IEnumerable<KeyValuePair<TKey, UserFactors>> users)
         {
             if (user == null)
             {
