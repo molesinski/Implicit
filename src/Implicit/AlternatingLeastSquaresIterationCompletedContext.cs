@@ -2,9 +2,9 @@
 
 namespace Implicit
 {
-    public class AlternatingLeastSquaresIterationCompletedEventArgs : EventArgs
+    public class AlternatingLeastSquaresIterationCompletedContext
     {
-        public AlternatingLeastSquaresIterationCompletedEventArgs(int iteration, double loss, TimeSpan elapsed)
+        public AlternatingLeastSquaresIterationCompletedContext(int iteration, double loss, TimeSpan elapsed)
         {
             this.Iteration = iteration;
             this.Loss = loss;

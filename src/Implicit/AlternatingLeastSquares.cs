@@ -1,130 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
 
 namespace Implicit
 {
-    using LabeledMatrix = Dictionary<string, Dictionary<string, double>>;
     using SparseMatrix = Dictionary<int, Dictionary<int, double>>;
 
-    public class AlternatingLeastSquares
+    public static class AlternatingLeastSquares
     {
         internal const double Epsilon = 1e-10;
 
-        private readonly int factors;
-        private readonly double regularization;
-        private readonly int iterations;
-        private readonly bool useConjugateGradient;
-        private readonly bool calculateLossAtIteration;
-
-        public AlternatingLeastSquares(
-            int factors = 100,
-            double regularization = 0.01,
-            int iterations = 15,
-            bool useConjugateGradient = true,
-            bool calculateLossAtIteration = false)
-        {
-            this.factors = factors;
-            this.regularization = regularization;
-            this.iterations = iterations;
-            this.useConjugateGradient = useConjugateGradient;
-            this.calculateLossAtIteration = calculateLossAtIteration;
-        }
-
-        public event EventHandler<AlternatingLeastSquaresIterationCompletedEventArgs> OnIterationCompleted;
-
-        public AlternatingLeastSquaresRecommender Fit(LabeledMatrix data)
+        public static AlternatingLeastSquaresRecommender Fit(AlternatingLeastSquaresData data, AlternatingLeastSquaresParameters parameters)
         {
             if (data == null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
 
-            return this.Fit(data.SelectMany(user => user.Value, (user, item) => new UserItem(user.Key, item.Key, item.Value)));
-        }
+            var userMap = data.UserMap;
+            var itemMap = data.ItemMap;
+            var Cui = data.Cui;
+            var Ciu = data.Ciu;
 
-        public AlternatingLeastSquaresRecommender Fit(IEnumerable<UserItem> data)
-        {
-            if (data == null)
-            {
-                throw new ArgumentNullException(nameof(data));
-            }
-
-            var userMap = new Dictionary<string, int>();
-            var itemMap = new Dictionary<string, int>();
-            var Cui = new SparseMatrix();
-            var Ciu = new SparseMatrix();
-            var nextUserIndex = 0;
-            var nextItemIndex = 0;
-
-            foreach (var userItem in data)
-            {
-                if (!userMap.TryGetValue(userItem.UserId, out var u))
-                {
-                    userMap.Add(userItem.UserId, u = nextUserIndex++);
-                }
-
-                if (!itemMap.TryGetValue(userItem.ItemId, out var i))
-                {
-                    itemMap.Add(userItem.ItemId, i = nextItemIndex++);
-                }
-
-                if (!Cui.TryGetValue(u, out var user))
-                {
-                    Cui.Add(u, user = new Dictionary<int, double>());
-                }
-
-                if (!Ciu.TryGetValue(i, out var item))
-                {
-                    Ciu.Add(i, item = new Dictionary<int, double>());
-                }
-
-                user.Add(i, userItem.Confidence);
-                item.Add(u, userItem.Confidence);
-            }
-
-            var users = userMap.Count;
-            var items = itemMap.Count;
             var loss = 0.0;
+            var userFactors = Matrix<double>.Build.Random(userMap.Count, parameters.Factors, new ContinuousUniform(0, 0.01));
+            var itemFactors = Matrix<double>.Build.Random(itemMap.Count, parameters.Factors, new ContinuousUniform(0, 0.01));
 
-            var userFactors = Matrix<double>.Build.Random(users, this.factors, new ContinuousUniform(0, 0.01));
-            var itemFactors = Matrix<double>.Build.Random(items, this.factors, new ContinuousUniform(0, 0.01));
-
-            for (var iteration = 0; iteration < this.iterations; iteration++)
+            for (var iteration = 0; iteration < parameters.Iterations; iteration++)
             {
                 var stopwatch = Stopwatch.StartNew();
 
-                if (this.useConjugateGradient)
+                if (parameters.UseConjugateGradient)
                 {
-                    LeastSquaresConjugateGradientFast(Cui, userFactors, itemFactors, this.regularization);
-                    LeastSquaresConjugateGradientFast(Ciu, itemFactors, userFactors, this.regularization);
+                    LeastSquaresConjugateGradientFast(Cui, userFactors, itemFactors, parameters.Regularization);
+                    LeastSquaresConjugateGradientFast(Ciu, itemFactors, userFactors, parameters.Regularization);
                 }
                 else
                 {
-                    LeastSquaresFast(Cui, userFactors, itemFactors, this.regularization);
-                    LeastSquaresFast(Ciu, itemFactors, userFactors, this.regularization);
+                    LeastSquaresFast(Cui, userFactors, itemFactors, parameters.Regularization);
+                    LeastSquaresFast(Ciu, itemFactors, userFactors, parameters.Regularization);
                 }
 
-                if (this.calculateLossAtIteration)
+                if (parameters.CalculateLossAtIteration)
                 {
-                    loss = CalculateLossFast(Cui, userFactors, itemFactors, this.regularization);
+                    loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization);
                 }
 
-                this.OnIterationCompleted?.Invoke(this, new AlternatingLeastSquaresIterationCompletedEventArgs(iteration, loss, stopwatch.Elapsed));
+                parameters.IterationCompleted(iteration, loss, stopwatch.Elapsed);
             }
 
-            if (!this.calculateLossAtIteration)
+            if (!parameters.CalculateLossAtIteration)
             {
-                loss = CalculateLossFast(Cui, userFactors, itemFactors, this.regularization);
+                loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization);
             }
 
             return new AlternatingLeastSquaresRecommender(
-                this.factors,
-                this.regularization,
+                parameters.Factors,
+                parameters.Regularization,
                 loss,
                 userMap,
                 itemMap,
@@ -158,6 +93,7 @@ namespace Implicit
             return new LinearEquation(A, b);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
         private static void LeastSquares(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var factors = X.ColumnCount;
@@ -216,6 +152,7 @@ namespace Implicit
                 _ => { });
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
         private static void LeastSquaresConjugateGradient(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
         {
             var users = X.RowCount;
@@ -348,6 +285,7 @@ namespace Implicit
                 _ => { });
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
         private static double CalculateLoss(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var nnz = 0;
@@ -490,7 +428,7 @@ namespace Implicit
             return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
         }
 
-        private struct LinearEquation
+        private readonly struct LinearEquation
         {
             public LinearEquation(Matrix<double> A, Vector<double> b)
             {
@@ -500,6 +438,8 @@ namespace Implicit
 
             public Matrix<double> A { get; }
 
+
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Readability for linear equation coefficients.")]
             public Vector<double> b { get; }
         }
     }

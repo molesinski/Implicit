@@ -1,12 +1,12 @@
 ﻿variables:
   major: 0
-  minor: 3
-  patch: $[counter('versioncounter03', 0)]
+  minor: 4
+  patch: $[counter('versioncounter04', 0)]
 
 name: $(major).$(minor).$(patch)
 
 pool:
-  vmImage: vs2017-win2016
+  vmImage: windows-latest
 
 trigger:
   batch: true

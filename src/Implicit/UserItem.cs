@@ -1,6 +1,6 @@
 ﻿namespace Implicit
 {
-    public struct UserItem
+    public readonly struct UserItem
     {
         public UserItem(string userId, string itemId, double confidence)
         {

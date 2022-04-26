@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Implicit
+﻿namespace Implicit
 {
     public interface IRecommender
     {
-        List<ItemResult> RecommendUser(string userId);
+        RecommenderResults RecommendUser(string userId);
 
-        List<ItemResult> RecommendItem(string itemId);
+        RecommenderResults RecommendItem(string itemId);
     }
 }

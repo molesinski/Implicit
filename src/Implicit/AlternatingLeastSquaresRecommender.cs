@@ -7,6 +7,8 @@ using MathNet.Numerics.LinearAlgebra;
 
 namespace Implicit
 {
+    using SparseMatrix = Dictionary<int, Dictionary<int, double>>;
+
     public class AlternatingLeastSquaresRecommender : IRecommender, IMatrixFactorizationRecommender
     {
         private readonly int factors;
@@ -16,8 +18,8 @@ namespace Implicit
         private readonly Dictionary<string, int> itemMap;
         private readonly Matrix<double> userFactors;
         private readonly Matrix<double> itemFactors;
-        private Vector<double> itemNorms;
-        private Matrix<double> yty;
+        private Vector<double>? itemNorms;
+        private Matrix<double>? yty;
 
         internal AlternatingLeastSquaresRecommender(
             int factors,
@@ -44,12 +46,12 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(reader));
             }
 
-            this.factors = int.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
-            this.regularization = double.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
-            this.loss = double.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
+            this.factors = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+            this.regularization = double.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+            this.loss = double.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
 
-            var users = int.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
-            var items = int.Parse(reader.ReadLine(), CultureInfo.InvariantCulture);
+            var users = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+            var items = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
 
             this.userMap = new Dictionary<string, int>();
             this.itemMap = new Dictionary<string, int>();
@@ -58,7 +60,7 @@ namespace Implicit
 
             for (var u = 0; u < users; u++)
             {
-                var line = reader.ReadLine();
+                var line = reader.ReadLine()!;
                 var parts = line.Split('\t');
 
                 this.userMap.Add(parts.First(), u);
@@ -67,7 +69,7 @@ namespace Implicit
 
             for (var i = 0; i < items; i++)
             {
-                var line = reader.ReadLine();
+                var line = reader.ReadLine()!;
                 var parts = line.Split('\t');
 
                 this.itemMap.Add(parts.First(), i);
@@ -223,7 +225,7 @@ namespace Implicit
             }
         }
 
-        public List<ItemResult> RecommendUser(string userId)
+        public RecommenderResults RecommendUser(string userId)
         {
             if (userId == null)
             {
@@ -232,7 +234,7 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return new List<ItemResult>();
+                return RecommenderResults.Empty;
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
@@ -241,7 +243,7 @@ namespace Implicit
             return this.RecommendUser(user);
         }
 
-        public List<ItemResult> RecommendUser(UserFactors user)
+        public RecommenderResults RecommendUser(UserFactors user)
         {
             if (user == null)
             {
@@ -251,21 +253,21 @@ namespace Implicit
             var xu = user.Vector;
             var yi = Vector<double>.Build.Dense(this.factors);
 
-            var result = new List<ItemResult>(this.itemMap.Count);
+            var results = new List<KeyValuePair<string, double>>(this.itemMap.Count);
 
             foreach (var item in this.itemMap)
             {
                 this.itemFactors.Row(item.Value, yi);
 
-                result.Add(new ItemResult(item.Key, xu.DotProduct(yi)));
+                results.Add(new KeyValuePair<string, double>(item.Key, xu.DotProduct(yi)));
             }
 
-            result.Sort((a, b) => -1 * a.Score.CompareTo(b.Score));
+            results.Sort((a, b) => -1 * a.Value.CompareTo(b.Value));
 
-            return result;
+            return new RecommenderResults(results);
         }
 
-        public List<ItemResult> RecommendItem(string itemId)
+        public RecommenderResults RecommendItem(string itemId)
         {
             if (itemId == null)
             {
@@ -274,31 +276,32 @@ namespace Implicit
 
             if (!this.itemMap.ContainsKey(itemId))
             {
-                return new List<ItemResult>();
+                return RecommenderResults.Empty;
             }
 
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
             var yj = Vector<double>.Build.Dense(this.factors);
 
-            var result = new List<ItemResult>(this.itemMap.Count);
+            var results = new List<KeyValuePair<string, double>>(this.itemMap.Count);
 
             foreach (var item in this.itemMap)
             {
                 if (item.Key != itemId)
                 {
                     var j = item.Value;
+
                     this.itemFactors.Row(j, yj);
 
-                    result.Add(new ItemResult(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
+                    results.Add(new KeyValuePair<string, double>(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
                 }
             }
 
-            result.Sort((a, b) => -1 * a.Score.CompareTo(b.Score));
+            results.Sort((a, b) => -1 * a.Value.CompareTo(b.Value));
 
-            return result;
+            return new RecommenderResults(results);
         }
 
-        public List<TKey> RankUsers<TKey>(string userId, IEnumerable<KeyValuePair<TKey, UserFactors>> users)
+        public RecommenderResults RankUsers(string userId, IEnumerable<KeyValuePair<string, UserFactors>> users)
         {
             if (userId == null)
             {
@@ -312,7 +315,7 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return new List<TKey>();
+                return RecommenderResults.Empty;
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
@@ -321,7 +324,7 @@ namespace Implicit
             return this.RankUsers(user, users);
         }
 
-        public List<TKey> RankUsers<TKey>(UserFactors user, IEnumerable<KeyValuePair<TKey, UserFactors>> users)
+        public RecommenderResults RankUsers(UserFactors user, IEnumerable<KeyValuePair<string, UserFactors>> users)
         {
             if (user == null)
             {
@@ -335,21 +338,23 @@ namespace Implicit
 
             var xu = user.Vector;
 
-            return users
-                .Select(
-                    pair =>
-                    {
-                        var xv = pair.Value.Vector;
-                        var norm = pair.Value.Norm;
+            var results = new List<KeyValuePair<string, double>>();
 
-                        return new { pair.Key, Score = xu.DotProduct(xv) / norm };
-                    })
-                .OrderByDescending(o => o.Score)
-                .Select(o => o.Key)
-                .ToList();
+            foreach (var pair in users)
+            {
+                var xv = pair.Value.Vector;
+                var norm = pair.Value.Norm;
+                var score = xu.DotProduct(xv) / norm;
+
+                results.Add(new KeyValuePair<string, double>(pair.Key, score));
+            }
+
+            results.Sort((a, b) => -1 * a.Value.CompareTo(b.Value));
+
+            return new RecommenderResults(results);
         }
 
-        public UserFactors GetUserFactors(string userId)
+        public UserFactors? GetUserFactors(string userId)
         {
             if (userId == null)
             {
@@ -374,14 +379,18 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            var u = 0;
-            var Cui = items
-                .Select(o => new { ItemId = o.Key, Confidence = o.Value })
-                .Where(o => this.itemMap.ContainsKey(o.ItemId))
-                .Select(o => new { User = u, Item = this.itemMap[o.ItemId], o.Confidence })
-                .GroupBy(o => o.User)
-                .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.Item, p => p.Confidence));
+            var userItems = new Dictionary<int, double>(items.Count);
 
+            foreach (var item in items)
+            {
+                if (this.itemMap.TryGetValue(item.Key, out var i))
+                {
+                    userItems.Add(i, item.Value);
+                }
+            }
+
+            var u = 0;
+            var Cui = new SparseMatrix(1) { [u] = userItems };
             var xu = AlternatingLeastSquares.UserFactor(this.itemFactors, this.YtY, Cui, u, this.regularization, this.factors);
 
             return new UserFactors(xu);

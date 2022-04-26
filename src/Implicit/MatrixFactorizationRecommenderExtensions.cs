@@ -6,10 +6,9 @@ namespace Implicit
 {
     public static class MatrixFactorizationRecommenderExtensions
     {
-        public static List<ItemResult> RecommendUser(
+        public static RecommenderResults RecommendUser(
             this IMatrixFactorizationRecommender recommender,
-            IEnumerable<string> items,
-            bool excludeItems = false)
+            IEnumerable<string> items)
         {
             if (recommender == null)
             {
@@ -21,22 +20,14 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            var result = recommender.RecommendUser(recommender.ComputeUserFactors(items));
+            var results = recommender.RecommendUser(recommender.ComputeUserFactors(items));
 
-            if (excludeItems)
-            {
-                var excludeSet = new HashSet<string>(items);
-
-                result.RemoveAll(o => excludeSet.Contains(o.ItemId));
-            }
-
-            return result;
+            return results;
         }
 
-        public static List<ItemResult> RecommendUser(
+        public static RecommenderResults RecommendUser(
             this IMatrixFactorizationRecommender recommender,
-            Dictionary<string, double> items,
-            bool excludeItems = false)
+            Dictionary<string, double> items)
         {
             if (recommender == null)
             {
@@ -48,22 +39,15 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            var result = recommender.RecommendUser(recommender.ComputeUserFactors(items));
+            var results = recommender.RecommendUser(recommender.ComputeUserFactors(items));
 
-            if (excludeItems)
-            {
-                var excludeSet = new HashSet<string>(items.Keys);
-
-                result.RemoveAll(o => excludeSet.Contains(o.ItemId));
-            }
-
-            return result;
+            return results;
         }
 
-        public static List<TKey> RankUsers<TKey>(
+        public static RecommenderResults RankUsers(
             this IMatrixFactorizationRecommender recommender,
             string userId,
-            IEnumerable<KeyValuePair<TKey, IEnumerable<string>>> userItems)
+            IEnumerable<KeyValuePair<string, IEnumerable<string>>> userItems)
         {
             if (recommender == null)
             {
@@ -80,14 +64,13 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(userItems));
             }
 
-            return recommender
-                .RankUsers(userId, userItems.Select(o => new KeyValuePair<TKey, Dictionary<string, double>>(o.Key, o.Value.ToDictionary(p => p, p => 1.0))));
+            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, Dictionary<string, double>>(o.Key, o.Value.ToDictionary(p => p, p => 1.0))));
         }
 
-        public static List<TKey> RankUsers<TKey>(
+        public static RecommenderResults RankUsers(
             this IMatrixFactorizationRecommender recommender,
             string userId,
-            IEnumerable<KeyValuePair<TKey, Dictionary<string, double>>> userItems)
+            IEnumerable<KeyValuePair<string, Dictionary<string, double>>> userItems)
         {
             if (recommender == null)
             {
@@ -104,8 +87,7 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(userItems));
             }
 
-            return recommender
-                .RankUsers(userId, userItems.Select(o => new KeyValuePair<TKey, UserFactors>(o.Key, recommender.ComputeUserFactors(o.Value))));
+            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, UserFactors>(o.Key, recommender.ComputeUserFactors(o.Value))));
         }
 
         public static UserFactors ComputeUserFactors(
@@ -122,8 +104,7 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender
-                .ComputeUserFactors(items.ToDictionary(o => o, o => 1.0));
+            return recommender.ComputeUserFactors(items.ToDictionary(o => o, o => 1.0));
         }
     }
 }

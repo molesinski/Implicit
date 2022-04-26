@@ -30,15 +30,15 @@ namespace Implicit.Tests
                 .GroupBy(o => o.UserId)
                 .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence * 2));
 
-            var factorizers = new[]
+            var parametersScenarios = new[]
             {
-                new AlternatingLeastSquares(factors: 6, regularization: 0, iterations: 15, useConjugateGradient: true),
-                new AlternatingLeastSquares(factors: 6, regularization: 0, iterations: 15, useConjugateGradient: false),
+                new AlternatingLeastSquaresParameters(factors: 6, regularization: 0, iterations: 15, useConjugateGradient: true),
+                new AlternatingLeastSquaresParameters(factors: 6, regularization: 0, iterations: 15, useConjugateGradient: false),
             };
 
-            foreach (var factorizer in factorizers)
+            foreach (var parameters in parametersScenarios)
             {
-                var recommender = factorizer.Fit(data);
+                var recommender = AlternatingLeastSquares.Fit(AlternatingLeastSquaresData.Load(data), parameters);
 
                 Assert.True(recommender.Loss < 0.00001);
             }
@@ -68,8 +68,8 @@ namespace Implicit.Tests
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
-                var items1 = recommender1.RecommendUser(userId).Select(o => o.ItemId);
-                var items2 = recommender2.RecommendUser(userId).Select(o => o.ItemId);
+                var items1 = recommender1.RecommendUser(userId).Results;
+                var items2 = recommender2.RecommendUser(userId).Results;
 
                 Assert.True(items1.SequenceEqual(items2));
             }
@@ -99,8 +99,8 @@ namespace Implicit.Tests
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
-                var items1 = recommender1.RecommendUser(userId).Select(o => o.ItemId);
-                var items2 = recommender2.RecommendUser(userId).Select(o => o.ItemId);
+                var items1 = recommender1.RecommendUser(userId).Results;
+                var items2 = recommender2.RecommendUser(userId).Results;
 
                 Assert.True(items1.SequenceEqual(items2));
             }
@@ -108,8 +108,8 @@ namespace Implicit.Tests
 
         protected override AlternatingLeastSquaresRecommender CreateRecommender(Dictionary<string, Dictionary<string, double>> data)
         {
-            var factorizer = new AlternatingLeastSquares(factors: 3, regularization: 0, iterations: 15, useConjugateGradient: true);
-            var recommender = factorizer.Fit(data);
+            var parameters = new AlternatingLeastSquaresParameters(factors: 3, regularization: 0, iterations: 15, useConjugateGradient: true);
+            var recommender = AlternatingLeastSquares.Fit(AlternatingLeastSquaresData.Load(data), parameters);
 
             return recommender;
         }
