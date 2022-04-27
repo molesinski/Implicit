@@ -225,7 +225,7 @@ namespace Implicit
             }
         }
 
-        public RecommenderResults RecommendUser(string userId)
+        public TResults RecommendUser<TResults>(string userId, IResultsBuilderFactory<TResults> resultsBuilderFactory)
         {
             if (userId == null)
             {
@@ -234,16 +234,16 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return RecommenderResults.Empty;
+                return resultsBuilderFactory.CreateEmpty();
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
             var user = new UserFactors(xu);
 
-            return this.RecommendUser(user);
+            return this.RecommendUser(user, resultsBuilderFactory);
         }
 
-        public RecommenderResults RecommendUser(UserFactors user)
+        public TResults RecommendUser<TResults>(UserFactors user, IResultsBuilderFactory<TResults> resultsBuilderFactory)
         {
             if (user == null)
             {
@@ -253,21 +253,19 @@ namespace Implicit
             var xu = user.Vector;
             var yi = Vector<double>.Build.Dense(this.factors);
 
-            var results = new List<KeyValuePair<string, double>>(this.itemMap.Count);
+            var resultsBuilder = resultsBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
 
             foreach (var item in this.itemMap)
             {
                 this.itemFactors.Row(item.Value, yi);
 
-                results.Add(new KeyValuePair<string, double>(item.Key, xu.DotProduct(yi)));
+                resultsBuilder.Add(item.Key, xu.DotProduct(yi));
             }
 
-            results.Sort((a, b) => -1 * a.Value.CompareTo(b.Value));
-
-            return new RecommenderResults(results);
+            return resultsBuilder.ToResults();
         }
 
-        public RecommenderResults RecommendItem(string itemId)
+        public TResults RecommendItem<TResults>(string itemId, IResultsBuilderFactory<TResults> resultsBuilderFactory)
         {
             if (itemId == null)
             {
@@ -276,13 +274,13 @@ namespace Implicit
 
             if (!this.itemMap.ContainsKey(itemId))
             {
-                return RecommenderResults.Empty;
+                return resultsBuilderFactory.CreateEmpty();
             }
 
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
             var yj = Vector<double>.Build.Dense(this.factors);
 
-            var results = new List<KeyValuePair<string, double>>(this.itemMap.Count);
+            var resultsBuilder = resultsBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
 
             foreach (var item in this.itemMap)
             {
@@ -292,16 +290,14 @@ namespace Implicit
 
                     this.itemFactors.Row(j, yj);
 
-                    results.Add(new KeyValuePair<string, double>(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
+                    resultsBuilder.Add(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]);
                 }
             }
 
-            results.Sort((a, b) => -1 * a.Value.CompareTo(b.Value));
-
-            return new RecommenderResults(results);
+            return resultsBuilder.ToResults();
         }
 
-        public RecommenderResults RankUsers(string userId, IEnumerable<KeyValuePair<string, UserFactors>> users)
+        public TResults RankUsers<TResults>(string userId, List<KeyValuePair<string, UserFactors>> users, IResultsBuilderFactory<TResults> resultsBuilderFactory)
         {
             if (userId == null)
             {
@@ -315,16 +311,16 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return RecommenderResults.Empty;
+                return resultsBuilderFactory.CreateEmpty();
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
             var user = new UserFactors(xu);
 
-            return this.RankUsers(user, users);
+            return this.RankUsers(user, users, resultsBuilderFactory);
         }
 
-        public RecommenderResults RankUsers(UserFactors user, IEnumerable<KeyValuePair<string, UserFactors>> users)
+        public TResults RankUsers<TResults>(UserFactors user, List<KeyValuePair<string, UserFactors>> users, IResultsBuilderFactory<TResults> resultsBuilderFactory)
         {
             if (user == null)
             {
@@ -338,7 +334,7 @@ namespace Implicit
 
             var xu = user.Vector;
 
-            var results = new List<KeyValuePair<string, double>>();
+            var resultsBuilder = resultsBuilderFactory.CreateBuilder(maximumCapacity: users.Count);
 
             foreach (var pair in users)
             {
@@ -346,12 +342,10 @@ namespace Implicit
                 var norm = pair.Value.Norm;
                 var score = xu.DotProduct(xv) / norm;
 
-                results.Add(new KeyValuePair<string, double>(pair.Key, score));
+                resultsBuilder.Add(pair.Key, score);
             }
 
-            results.Sort((a, b) => -1 * a.Value.CompareTo(b.Value));
-
-            return new RecommenderResults(results);
+            return resultsBuilder.ToResults();
         }
 
         public UserFactors? GetUserFactors(string userId)

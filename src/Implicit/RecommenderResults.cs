@@ -6,13 +6,13 @@ namespace Implicit
 {
     public class RecommenderResults
     {
-        public RecommenderResults(List<KeyValuePair<string, double>> results)
+        internal RecommenderResults(RecommenderResultsItem[] storage, int count)
         {
-            this.IsEmpty = results.Count == 0;
-            this.Results = new ResultsCollection(results);
+            this.IsEmpty = count == 0;
+            this.Results = new ResultsCollection(storage, count);
         }
 
-        public static RecommenderResults Empty { get; } = new RecommenderResults(new List<KeyValuePair<string, double>>(capacity: 0));
+        public static RecommenderResults Empty { get; } = new RecommenderResults(Array.Empty<RecommenderResultsItem>(), count: 0);
 
         public bool IsEmpty { get; }
 
@@ -20,24 +20,39 @@ namespace Implicit
 
         public sealed class ResultsCollection : IEnumerable<string>
         {
-            private readonly List<KeyValuePair<string, double>> results;
+            private readonly RecommenderResultsItem[] storage;
+            private readonly int count;
 
-            internal ResultsCollection(List<KeyValuePair<string, double>> results)
+            internal ResultsCollection(RecommenderResultsItem[] storage, int count)
             {
-                this.results = results;
+                this.storage = storage;
+                this.count = count;
+            }
+
+            public string this[int index]
+            {
+                get
+                {
+                    if (index < 0 || index >= this.count)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(index));
+                    }
+
+                    return this.storage[index].Key;
+                }
             }
 
             public int Count
             {
                 get
                 {
-                    return this.results.Count;
+                    return this.count;
                 }
             }
 
             public ResultsCollectionEnumerator GetEnumerator()
             {
-                return new ResultsCollectionEnumerator(this.results);
+                return new ResultsCollectionEnumerator(this.storage, this.count);
             }
 
             IEnumerator<string> IEnumerable<string>.GetEnumerator()
@@ -52,15 +67,15 @@ namespace Implicit
 
             public struct ResultsCollectionEnumerator : IEnumerator<string>
             {
-                private readonly List<KeyValuePair<string, double>> results;
+                private readonly RecommenderResultsItem[] storage;
                 private readonly int count;
                 private int index;
                 private string? current;
 
-                internal ResultsCollectionEnumerator(List<KeyValuePair<string, double>> results)
+                internal ResultsCollectionEnumerator(RecommenderResultsItem[] storage, int count)
                 {
-                    this.results = results;
-                    this.count = results.Count;
+                    this.storage = storage;
+                    this.count = count;
                     this.index = 0;
                     this.current = default;
                 }
@@ -90,7 +105,7 @@ namespace Implicit
                 {
                     if (this.index < this.count)
                     {
-                        this.current = this.results[this.index].Key;
+                        this.current = this.storage[this.index].Key;
                         this.index++;
 
                         return true;
