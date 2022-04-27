@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Implicit
 {
@@ -16,13 +17,36 @@ namespace Implicit
             this.Ciu = ciu;
         }
 
-        public Dictionary<string, int> UserMap { get; }
+        public int UserCount
+        {
+            get
+            {
+                return this.UserMap.Count;
+            }
+        }
 
-        public Dictionary<string, int> ItemMap { get; }
+        public int ItemCount
+        {
+            get
+            {
+                return this.ItemMap.Count;
+            }
+        }
+        public double FillFactor
+        {
+            get
+            {
+                return 1.0 * this.Cui.Values.Sum(o => o.Values.Count) / (this.UserMap.Count * this.ItemMap.Count);
+            }
+        }
 
-        public SparseMatrix Cui { get; }
+        internal Dictionary<string, int> UserMap { get; }
 
-        public SparseMatrix Ciu { get; }
+        internal Dictionary<string, int> ItemMap { get; }
+
+        internal SparseMatrix Cui { get; }
+
+        internal SparseMatrix Ciu { get; }
 
         public static AlternatingLeastSquaresData Load(LabeledMatrix data)
         {
