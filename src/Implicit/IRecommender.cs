@@ -2,8 +2,8 @@
 {
     public interface IRecommender
     {
-        TResults RecommendUser<TResults>(string userId, IResultsBuilderFactory<TResults> resultsBuilderFactory);
+        TResult RecommendUser<TResult>(string userId, IResultBuilderFactory<TResult> resultBuilderFactory);
 
-        TResults RecommendItem<TResults>(string itemId, IResultsBuilderFactory<TResults> resultsBuilderFactory);
+        TResult RecommendItem<TResult>(string itemId, IResultBuilderFactory<TResult> resultBuilderFactory);
     }
 }

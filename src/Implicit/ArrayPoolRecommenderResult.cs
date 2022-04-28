@@ -7,24 +7,24 @@ using System.Collections.Generic;
 
 namespace Implicit
 {
-    public class ArrayPoolRecommenderResults : IDisposable
+    public class ArrayPoolRecommenderResult : IDisposable
     {
-        private readonly ArrayPool<RecommenderResultsItem>? pool;
-        private readonly RecommenderResultsItem[] storage;
+        private readonly RecommenderResultItem[] storage;
+        private readonly ArrayPool<RecommenderResultItem>? pool;
         private bool disposed;
 
-        internal ArrayPoolRecommenderResults(ArrayPool<RecommenderResultsItem>? pool, RecommenderResultsItem[] storage, int count)
+        internal ArrayPoolRecommenderResult(RecommenderResultItem[] storage, int count, ArrayPool<RecommenderResultItem>? pool)
         {
             this.pool = pool;
             this.storage = storage;
 
             this.IsEmpty = count == 0;
-            this.Results = new ResultsCollection(storage, count);
+            this.Keys = new KeysCollection(storage, count);
         }
 
         public bool IsEmpty { get; }
 
-        public ResultsCollection Results { get; }
+        public KeysCollection Keys { get; }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -45,12 +45,12 @@ namespace Implicit
             GC.SuppressFinalize(this);
         }
 
-        public sealed class ResultsCollection : IEnumerable<string>
+        public sealed class KeysCollection : IEnumerable<string>
         {
-            private readonly RecommenderResultsItem[] storage;
+            private readonly RecommenderResultItem[] storage;
             private readonly int count;
 
-            internal ResultsCollection(RecommenderResultsItem[] storage, int count)
+            internal KeysCollection(RecommenderResultItem[] storage, int count)
             {
                 this.storage = storage;
                 this.count = count;
@@ -77,9 +77,9 @@ namespace Implicit
                 }
             }
 
-            public ResultsCollectionEnumerator GetEnumerator()
+            public Enumerator GetEnumerator()
             {
-                return new ResultsCollectionEnumerator(this.storage, this.count);
+                return new Enumerator(this.storage, this.count);
             }
 
             IEnumerator<string> IEnumerable<string>.GetEnumerator()
@@ -92,14 +92,14 @@ namespace Implicit
                 return this.GetEnumerator();
             }
 
-            public struct ResultsCollectionEnumerator : IEnumerator<string>
+            public struct Enumerator : IEnumerator<string>
             {
-                private readonly RecommenderResultsItem[] storage;
+                private readonly RecommenderResultItem[] storage;
                 private readonly int count;
                 private int index;
                 private string? current;
 
-                internal ResultsCollectionEnumerator(RecommenderResultsItem[] storage, int count)
+                internal Enumerator(RecommenderResultItem[] storage, int count)
                 {
                     this.storage = storage;
                     this.count = count;

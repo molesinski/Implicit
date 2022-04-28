@@ -16,7 +16,7 @@ namespace Implicit.Tests
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
-                var items = recommender.RecommendUser(userId).Results.Take(25);
+                var items = recommender.RecommendUser(userId).Keys.Take(25);
 
                 Assert.Equal(userId, items.Except(data[userId].Keys).First());
             }
@@ -31,7 +31,7 @@ namespace Implicit.Tests
 
             foreach (var itemId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
-                var items = recommender.RecommendItem(itemId).Results.Take(10);
+                var items = recommender.RecommendItem(itemId).Keys.Take(10);
 
                 foreach (var item in items)
                 {

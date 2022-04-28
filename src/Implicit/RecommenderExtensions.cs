@@ -4,7 +4,7 @@ namespace Implicit
 {
     public static class RecommenderExtensions
     {
-        public static RecommenderResults RecommendUser(
+        public static RecommenderResult RecommendUser(
             this IRecommender recommender,
             string userId)
         {
@@ -18,10 +18,10 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            return recommender.RecommendUser(userId, RecommenderResultsBuilderFactory.Instance);
+            return recommender.RecommendUser(userId, RecommenderResultBuilderFactory.Instance);
         }
 
-        public static RecommenderResults RecommendItem(
+        public static RecommenderResult RecommendItem(
             this IRecommender recommender,
             string itemId)
         {
@@ -35,7 +35,7 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(itemId));
             }
 
-            return recommender.RecommendItem(itemId, RecommenderResultsBuilderFactory.Instance);
+            return recommender.RecommendItem(itemId, RecommenderResultBuilderFactory.Instance);
         }
     }
 }

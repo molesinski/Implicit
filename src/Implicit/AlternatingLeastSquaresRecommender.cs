@@ -225,7 +225,7 @@ namespace Implicit
             }
         }
 
-        public TResults RecommendUser<TResults>(string userId, IResultsBuilderFactory<TResults> resultsBuilderFactory)
+        public TResult RecommendUser<TResult>(string userId, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
             if (userId == null)
             {
@@ -234,16 +234,16 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return resultsBuilderFactory.CreateEmpty();
+                return resultBuilderFactory.CreateEmpty();
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
             var user = new UserFactors(xu);
 
-            return this.RecommendUser(user, resultsBuilderFactory);
+            return this.RecommendUser(user, resultBuilderFactory);
         }
 
-        public TResults RecommendUser<TResults>(UserFactors user, IResultsBuilderFactory<TResults> resultsBuilderFactory)
+        public TResult RecommendUser<TResult>(UserFactors user, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
             if (user == null)
             {
@@ -253,19 +253,19 @@ namespace Implicit
             var xu = user.Vector;
             var yi = Vector<double>.Build.Dense(this.factors);
 
-            var resultsBuilder = resultsBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
+            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
 
             foreach (var item in this.itemMap)
             {
                 this.itemFactors.Row(item.Value, yi);
 
-                resultsBuilder.Add(item.Key, xu.DotProduct(yi));
+                resultBuilder.Append(item.Key, xu.DotProduct(yi));
             }
 
-            return resultsBuilder.ToResults();
+            return resultBuilder.ToResult();
         }
 
-        public TResults RecommendItem<TResults>(string itemId, IResultsBuilderFactory<TResults> resultsBuilderFactory)
+        public TResult RecommendItem<TResult>(string itemId, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
             if (itemId == null)
             {
@@ -274,30 +274,27 @@ namespace Implicit
 
             if (!this.itemMap.ContainsKey(itemId))
             {
-                return resultsBuilderFactory.CreateEmpty();
+                return resultBuilderFactory.CreateEmpty();
             }
 
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
             var yj = Vector<double>.Build.Dense(this.factors);
 
-            var resultsBuilder = resultsBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
+            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
 
             foreach (var item in this.itemMap)
             {
-                if (item.Key != itemId)
-                {
-                    var j = item.Value;
+                var j = item.Value;
 
-                    this.itemFactors.Row(j, yj);
+                this.itemFactors.Row(j, yj);
 
-                    resultsBuilder.Add(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]);
-                }
+                resultBuilder.Append(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]);
             }
 
-            return resultsBuilder.ToResults();
+            return resultBuilder.ToResult();
         }
 
-        public TResults RankUsers<TResults>(string userId, List<KeyValuePair<string, UserFactors>> users, IResultsBuilderFactory<TResults> resultsBuilderFactory)
+        public TResult RankUsers<TResult>(string userId, List<KeyValuePair<string, UserFactors>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
             if (userId == null)
             {
@@ -311,16 +308,16 @@ namespace Implicit
 
             if (!this.userMap.ContainsKey(userId))
             {
-                return resultsBuilderFactory.CreateEmpty();
+                return resultBuilderFactory.CreateEmpty();
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
             var user = new UserFactors(xu);
 
-            return this.RankUsers(user, users, resultsBuilderFactory);
+            return this.RankUsers(user, users, resultBuilderFactory);
         }
 
-        public TResults RankUsers<TResults>(UserFactors user, List<KeyValuePair<string, UserFactors>> users, IResultsBuilderFactory<TResults> resultsBuilderFactory)
+        public TResult RankUsers<TResult>(UserFactors user, List<KeyValuePair<string, UserFactors>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
             if (user == null)
             {
@@ -334,7 +331,7 @@ namespace Implicit
 
             var xu = user.Vector;
 
-            var resultsBuilder = resultsBuilderFactory.CreateBuilder(maximumCapacity: users.Count);
+            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: users.Count);
 
             foreach (var pair in users)
             {
@@ -342,10 +339,10 @@ namespace Implicit
                 var norm = pair.Value.Norm;
                 var score = xu.DotProduct(xv) / norm;
 
-                resultsBuilder.Add(pair.Key, score);
+                resultBuilder.Append(pair.Key, score);
             }
 
-            return resultsBuilder.ToResults();
+            return resultBuilder.ToResult();
         }
 
         public UserFactors? GetUserFactors(string userId)

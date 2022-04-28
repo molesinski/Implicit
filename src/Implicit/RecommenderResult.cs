@@ -4,26 +4,24 @@ using System.Collections.Generic;
 
 namespace Implicit
 {
-    public class RecommenderResults
+    public class RecommenderResult
     {
-        internal RecommenderResults(RecommenderResultsItem[] storage, int count)
+        internal RecommenderResult(RecommenderResultItem[] storage, int count)
         {
             this.IsEmpty = count == 0;
-            this.Results = new ResultsCollection(storage, count);
+            this.Keys = new KeysCollection(storage, count);
         }
-
-        public static RecommenderResults Empty { get; } = new RecommenderResults(Array.Empty<RecommenderResultsItem>(), count: 0);
 
         public bool IsEmpty { get; }
 
-        public ResultsCollection Results { get; }
+        public KeysCollection Keys { get; }
 
-        public sealed class ResultsCollection : IEnumerable<string>
+        public sealed class KeysCollection : IEnumerable<string>
         {
-            private readonly RecommenderResultsItem[] storage;
+            private readonly RecommenderResultItem[] storage;
             private readonly int count;
 
-            internal ResultsCollection(RecommenderResultsItem[] storage, int count)
+            internal KeysCollection(RecommenderResultItem[] storage, int count)
             {
                 this.storage = storage;
                 this.count = count;
@@ -50,9 +48,9 @@ namespace Implicit
                 }
             }
 
-            public ResultsCollectionEnumerator GetEnumerator()
+            public Enumerator GetEnumerator()
             {
-                return new ResultsCollectionEnumerator(this.storage, this.count);
+                return new Enumerator(this.storage, this.count);
             }
 
             IEnumerator<string> IEnumerable<string>.GetEnumerator()
@@ -65,14 +63,14 @@ namespace Implicit
                 return this.GetEnumerator();
             }
 
-            public struct ResultsCollectionEnumerator : IEnumerator<string>
+            public struct Enumerator : IEnumerator<string>
             {
-                private readonly RecommenderResultsItem[] storage;
+                private readonly RecommenderResultItem[] storage;
                 private readonly int count;
                 private int index;
                 private string? current;
 
-                internal ResultsCollectionEnumerator(RecommenderResultsItem[] storage, int count)
+                internal Enumerator(RecommenderResultItem[] storage, int count)
                 {
                     this.storage = storage;
                     this.count = count;

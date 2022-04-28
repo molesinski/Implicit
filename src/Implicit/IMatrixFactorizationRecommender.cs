@@ -4,11 +4,11 @@ namespace Implicit
 {
     public interface IMatrixFactorizationRecommender : IRecommender
     {
-        TResults RecommendUser<TResults>(UserFactors user, IResultsBuilderFactory<TResults> resultsBuilderFactory);
+        TResult RecommendUser<TResult>(UserFactors user, IResultBuilderFactory<TResult> resultBuilderFactory);
 
-        TResults RankUsers<TResults>(string userId, List<KeyValuePair<string, UserFactors>> users, IResultsBuilderFactory<TResults> resultsBuilderFactory);
+        TResult RankUsers<TResult>(string userId, List<KeyValuePair<string, UserFactors>> users, IResultBuilderFactory<TResult> resultBuilderFactory);
 
-        TResults RankUsers<TResults>(UserFactors user, List<KeyValuePair<string, UserFactors>> users, IResultsBuilderFactory<TResults> resultsBuilderFactory);
+        TResult RankUsers<TResult>(UserFactors user, List<KeyValuePair<string, UserFactors>> users, IResultBuilderFactory<TResult> resultBuilderFactory);
 
         UserFactors? GetUserFactors(string userId);
 

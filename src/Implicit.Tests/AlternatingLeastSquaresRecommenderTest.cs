@@ -68,8 +68,8 @@ namespace Implicit.Tests
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
-                var items1 = recommender1.RecommendUser(userId).Results;
-                var items2 = recommender2.RecommendUser(userId).Results;
+                var items1 = recommender1.RecommendUser(userId).Keys;
+                var items2 = recommender2.RecommendUser(userId).Keys;
 
                 Assert.True(items1.SequenceEqual(items2));
             }
@@ -99,8 +99,8 @@ namespace Implicit.Tests
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
-                var items1 = recommender1.RecommendUser(userId).Results;
-                var items2 = recommender2.RecommendUser(userId).Results;
+                var items1 = recommender1.RecommendUser(userId).Keys;
+                var items2 = recommender2.RecommendUser(userId).Keys;
 
                 Assert.True(items1.SequenceEqual(items2));
             }
