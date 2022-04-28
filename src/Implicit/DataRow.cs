@@ -1,8 +1,8 @@
 ﻿namespace Implicit
 {
-    public readonly struct UserItem
+    public readonly struct DataRow
     {
-        public UserItem(string userId, string itemId, double confidence)
+        public DataRow(string userId, string itemId, double confidence)
         {
             this.UserId = userId;
             this.ItemId = itemId;

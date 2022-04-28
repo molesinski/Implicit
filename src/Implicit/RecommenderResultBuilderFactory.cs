@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Implicit
 {
-    public class RecommenderResultBuilderFactory : IResultBuilderFactory<RecommenderResult>
+    public sealed class RecommenderResultBuilderFactory : IResultBuilderFactory<RecommenderResult>
     {
         private RecommenderResultBuilderFactory()
         {
@@ -12,12 +13,12 @@ namespace Implicit
 
         public RecommenderResult CreateEmpty()
         {
-            return new RecommenderResult(Array.Empty<RecommenderResultItem>(), count: 0);
+            return new RecommenderResult(Array.Empty<KeyValuePair<string, double>>(), count: 0);
         }
 
         public IResultBuilder<RecommenderResult> CreateBuilder(int maximumCapacity)
         {
-            return new RecommenderResultBuilder(new RecommenderResultItem[maximumCapacity]);
+            return new RecommenderResultBuilder(new KeyValuePair<string, double>[maximumCapacity]);
         }
     }
 }

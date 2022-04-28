@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace Implicit
 {
-    public class RecommenderResult
+    public sealed class RecommenderResult
     {
-        internal RecommenderResult(RecommenderResultItem[] storage, int count)
+        internal RecommenderResult(KeyValuePair<string, double>[] storage, int count)
         {
             this.IsEmpty = count == 0;
             this.Keys = new KeysCollection(storage, count);
@@ -18,10 +18,10 @@ namespace Implicit
 
         public sealed class KeysCollection : IEnumerable<string>
         {
-            private readonly RecommenderResultItem[] storage;
+            private readonly KeyValuePair<string, double>[] storage;
             private readonly int count;
 
-            internal KeysCollection(RecommenderResultItem[] storage, int count)
+            internal KeysCollection(KeyValuePair<string, double>[] storage, int count)
             {
                 this.storage = storage;
                 this.count = count;
@@ -65,12 +65,12 @@ namespace Implicit
 
             public struct Enumerator : IEnumerator<string>
             {
-                private readonly RecommenderResultItem[] storage;
+                private readonly KeyValuePair<string, double>[] storage;
                 private readonly int count;
                 private int index;
                 private string? current;
 
-                internal Enumerator(RecommenderResultItem[] storage, int count)
+                internal Enumerator(KeyValuePair<string, double>[] storage, int count)
                 {
                     this.storage = storage;
                     this.count = count;

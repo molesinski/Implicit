@@ -2,7 +2,7 @@
 
 namespace Implicit
 {
-    public class AlternatingLeastSquaresIterationCompletedContext
+    public sealed class AlternatingLeastSquaresIterationCompletedContext
     {
         public AlternatingLeastSquaresIterationCompletedContext(int iteration, double loss, TimeSpan elapsed)
         {

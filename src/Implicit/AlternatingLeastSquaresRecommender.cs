@@ -9,7 +9,7 @@ namespace Implicit
 {
     using SparseMatrix = Dictionary<int, Dictionary<int, double>>;
 
-    public class AlternatingLeastSquaresRecommender : IRecommender, IMatrixFactorizationRecommender
+    public sealed class AlternatingLeastSquaresRecommender : IRecommender, IMatrixFactorizationRecommender
     {
         private readonly int factors;
         private readonly double regularization;

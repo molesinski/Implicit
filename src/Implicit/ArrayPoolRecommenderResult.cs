@@ -7,13 +7,13 @@ using System.Collections.Generic;
 
 namespace Implicit
 {
-    public class ArrayPoolRecommenderResult : IDisposable
+    public sealed class ArrayPoolRecommenderResult : IDisposable
     {
-        private readonly RecommenderResultItem[] storage;
-        private readonly ArrayPool<RecommenderResultItem>? pool;
+        private readonly KeyValuePair<string, double>[] storage;
+        private readonly ArrayPool<KeyValuePair<string, double>>? pool;
         private bool disposed;
 
-        internal ArrayPoolRecommenderResult(RecommenderResultItem[] storage, int count, ArrayPool<RecommenderResultItem>? pool)
+        internal ArrayPoolRecommenderResult(KeyValuePair<string, double>[] storage, int count, ArrayPool<KeyValuePair<string, double>>? pool)
         {
             this.pool = pool;
             this.storage = storage;
@@ -26,7 +26,7 @@ namespace Implicit
 
         public KeysCollection Keys { get; }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!this.disposed)
             {
@@ -47,10 +47,10 @@ namespace Implicit
 
         public sealed class KeysCollection : IEnumerable<string>
         {
-            private readonly RecommenderResultItem[] storage;
+            private readonly KeyValuePair<string, double>[] storage;
             private readonly int count;
 
-            internal KeysCollection(RecommenderResultItem[] storage, int count)
+            internal KeysCollection(KeyValuePair<string, double>[] storage, int count)
             {
                 this.storage = storage;
                 this.count = count;
@@ -94,12 +94,12 @@ namespace Implicit
 
             public struct Enumerator : IEnumerator<string>
             {
-                private readonly RecommenderResultItem[] storage;
+                private readonly KeyValuePair<string, double>[] storage;
                 private readonly int count;
                 private int index;
                 private string? current;
 
-                internal Enumerator(RecommenderResultItem[] storage, int count)
+                internal Enumerator(KeyValuePair<string, double>[] storage, int count)
                 {
                     this.storage = storage;
                     this.count = count;

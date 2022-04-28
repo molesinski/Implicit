@@ -7,7 +7,7 @@ namespace Implicit
     using LabeledMatrix = Dictionary<string, Dictionary<string, double>>;
     using SparseMatrix = Dictionary<int, Dictionary<int, double>>;
 
-    public class AlternatingLeastSquaresData
+    public sealed class AlternatingLeastSquaresData
     {
         public AlternatingLeastSquaresData(Dictionary<string, int> userMap, Dictionary<string, int> itemMap, SparseMatrix cui, SparseMatrix ciu)
         {
@@ -106,7 +106,7 @@ namespace Implicit
                     Ciu);
         }
 
-        public static AlternatingLeastSquaresData Load(IEnumerable<UserItem> data)
+        public static AlternatingLeastSquaresData Load(IEnumerable<DataRow> data)
         {
             if (data == null)
             {
@@ -120,11 +120,11 @@ namespace Implicit
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
-            foreach (var userItem in data)
+            foreach (var row in data)
             {
-                var userId = userItem.UserId;
-                var itemId = userItem.ItemId;
-                var confidence = userItem.Confidence;
+                var userId = row.UserId;
+                var itemId = row.ItemId;
+                var confidence = row.Confidence;
 
                 if (!userMap.TryGetValue(userId, out var u))
                 {

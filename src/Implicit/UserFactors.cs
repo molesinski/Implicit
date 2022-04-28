@@ -2,7 +2,7 @@
 
 namespace Implicit
 {
-    public class UserFactors
+    public sealed class UserFactors
     {
         private double? norm;
 

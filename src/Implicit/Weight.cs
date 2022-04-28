@@ -30,7 +30,7 @@ namespace Implicit
             return weighted;
         }
 
-        public static IEnumerable<UserItem> TFIDF(IEnumerable<UserItem> data)
+        public static IEnumerable<DataRow> TFIDF(IEnumerable<DataRow> data)
         {
             if (data == null)
             {
@@ -57,7 +57,7 @@ namespace Implicit
                         var idf = Math.Log(n) - Math.Log(1 + items[userItem.ItemId]);
                         var confidence = Math.Sqrt(userItem.Confidence) * idf;
 
-                        return new UserItem(userItem.UserId, userItem.ItemId, confidence);
+                        return new DataRow(userItem.UserId, userItem.ItemId, confidence);
                     });
         }
 
@@ -87,7 +87,7 @@ namespace Implicit
             return weighted;
         }
 
-        public static IEnumerable<UserItem> BM25(IEnumerable<UserItem> data, int K1 = 100, double B = 0.5)
+        public static IEnumerable<DataRow> BM25(IEnumerable<DataRow> data, int K1 = 100, double B = 0.5)
         {
             if (data == null)
             {
@@ -117,7 +117,7 @@ namespace Implicit
                         var lengthNorm = 1.0 - B + (B * users[userItem.UserId] / averageLength);
                         var confidence = userItem.Confidence * (K1 + 1.0) / ((K1 * lengthNorm) + userItem.Confidence) * idf;
 
-                        return new UserItem(userItem.UserId, userItem.ItemId, confidence);
+                        return new DataRow(userItem.UserId, userItem.ItemId, confidence);
                     });
         }
     }

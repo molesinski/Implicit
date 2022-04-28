@@ -2,7 +2,7 @@
 
 namespace Implicit
 {
-    public class AlternatingLeastSquaresParameters
+    public sealed class AlternatingLeastSquaresParameters
     {
         public AlternatingLeastSquaresParameters(
             int factors,

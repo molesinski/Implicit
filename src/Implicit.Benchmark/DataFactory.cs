@@ -8,7 +8,7 @@ namespace Implicit.Benchmark
 {
     public static class DataFactory
     {
-        public static IEnumerable<UserItem> GetLastFm360k()
+        public static IEnumerable<DataRow> GetLastFm360k()
         {
             var fileName = "usersha1-artmbid-artname-plays.tsv";
             var file = new FileInfo(fileName);
@@ -38,7 +38,7 @@ namespace Implicit.Benchmark
                     {
                         if (double.TryParse(parts.Last(), NumberStyles.None, CultureInfo.InvariantCulture, out var plays) && plays > 0)
                         {
-                            yield return new UserItem(user, artist, plays);
+                            yield return new DataRow(user, artist, plays);
                         }
                     }
                 }

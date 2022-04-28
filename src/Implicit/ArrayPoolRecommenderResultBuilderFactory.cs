@@ -2,24 +2,25 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 
 namespace Implicit
 {
-    public class ArrayPoolRecommenderResultBuilderFactory : IResultBuilderFactory<ArrayPoolRecommenderResult>
+    public sealed class ArrayPoolRecommenderResultBuilderFactory : IResultBuilderFactory<ArrayPoolRecommenderResult>
     {
-        private readonly ArrayPool<RecommenderResultItem> pool;
+        private readonly ArrayPool<KeyValuePair<string, double>> pool;
 
         public ArrayPoolRecommenderResultBuilderFactory()
-            : this(ArrayPool<RecommenderResultItem>.Create())
+            : this(ArrayPool<KeyValuePair<string, double>>.Create())
         {
         }
 
         public ArrayPoolRecommenderResultBuilderFactory(int maxArrayLength, int maxArraysPerBucket)
-            : this(ArrayPool<RecommenderResultItem>.Create(maxArrayLength, maxArraysPerBucket))
+            : this(ArrayPool<KeyValuePair<string, double>>.Create(maxArrayLength, maxArraysPerBucket))
         {
         }
 
-        private ArrayPoolRecommenderResultBuilderFactory(ArrayPool<RecommenderResultItem> pool)
+        private ArrayPoolRecommenderResultBuilderFactory(ArrayPool<KeyValuePair<string, double>> pool)
         {
             if (pool is null)
             {
@@ -29,11 +30,11 @@ namespace Implicit
             this.pool = pool;
         }
 
-        public static IResultBuilderFactory<ArrayPoolRecommenderResult> Shared { get; } = new ArrayPoolRecommenderResultBuilderFactory(ArrayPool<RecommenderResultItem>.Shared);
+        public static IResultBuilderFactory<ArrayPoolRecommenderResult> Shared { get; } = new ArrayPoolRecommenderResultBuilderFactory(ArrayPool<KeyValuePair<string, double>>.Shared);
 
         public ArrayPoolRecommenderResult CreateEmpty()
         {
-            return new ArrayPoolRecommenderResult(Array.Empty<RecommenderResultItem>(), count: 0, pool: null);
+            return new ArrayPoolRecommenderResult(Array.Empty<KeyValuePair<string, double>>(), count: 0, pool: null);
         }
 
         public IResultBuilder<ArrayPoolRecommenderResult> CreateBuilder(int maximumCapacity)
