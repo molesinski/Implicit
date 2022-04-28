@@ -37,12 +37,12 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender.RecommendUser(recommender.ComputeUserFactors(items));
+            return recommender.RecommendUser(recommender.ComputeUserFeatures(items));
         }
 
         public static RecommenderResult RecommendUser(
             this IMatrixFactorizationRecommender recommender,
-            UserFactors user)
+            UserFeatures user)
         {
             if (recommender == null)
             {
@@ -77,7 +77,7 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(userItems));
             }
 
-            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, UserFactors>(o.Key, recommender.ComputeUserFactors(o.Value))).ToList());
+            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, UserFeatures>(o.Key, recommender.ComputeUserFactors(o.Value))).ToList());
         }
 
         public static RecommenderResult RankUsers(
@@ -100,13 +100,13 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(userItems));
             }
 
-            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, UserFactors>(o.Key, recommender.ComputeUserFactors(o.Value))).ToList());
+            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, UserFeatures>(o.Key, recommender.ComputeUserFeatures(o.Value))).ToList());
         }
 
         public static RecommenderResult RankUsers(
             this IMatrixFactorizationRecommender recommender,
             string userId,
-            List<KeyValuePair<string, UserFactors>> users)
+            List<KeyValuePair<string, UserFeatures>> users)
         {
             if (recommender == null)
             {
@@ -128,8 +128,8 @@ namespace Implicit
 
         public static RecommenderResult RankUsers(
             this IMatrixFactorizationRecommender recommender,
-            UserFactors user,
-            List<KeyValuePair<string, UserFactors>> users)
+            UserFeatures user,
+            List<KeyValuePair<string, UserFeatures>> users)
         {
             if (recommender == null)
             {
@@ -149,7 +149,7 @@ namespace Implicit
             return recommender.RankUsers(user, users, RecommenderResultBuilderFactory.Instance);
         }
 
-        public static UserFactors ComputeUserFactors(
+        public static UserFeatures ComputeUserFactors(
             this IMatrixFactorizationRecommender recommender,
             IEnumerable<string> items)
         {
@@ -163,7 +163,7 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender.ComputeUserFactors(items.ToDictionary(o => o, o => 1.0));
+            return recommender.ComputeUserFeatures(items.ToDictionary(o => o, o => 1.0));
         }
     }
 }

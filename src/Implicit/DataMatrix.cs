@@ -4,12 +4,9 @@ using System.Linq;
 
 namespace Implicit
 {
-    using LabeledMatrix = Dictionary<string, Dictionary<string, double>>;
-    using SparseMatrix = Dictionary<int, Dictionary<int, double>>;
-
-    public sealed class AlternatingLeastSquaresData
+    public sealed class DataMatrix
     {
-        public AlternatingLeastSquaresData(Dictionary<string, int> userMap, Dictionary<string, int> itemMap, SparseMatrix cui, SparseMatrix ciu)
+        private DataMatrix(Dictionary<string, int> userMap, Dictionary<string, int> itemMap, Dictionary<int, Dictionary<int, double>> cui, Dictionary<int, Dictionary<int, double>> ciu)
         {
             this.UserMap = userMap;
             this.ItemMap = itemMap;
@@ -44,11 +41,11 @@ namespace Implicit
 
         internal Dictionary<string, int> ItemMap { get; }
 
-        internal SparseMatrix Cui { get; }
+        internal Dictionary<int, Dictionary<int, double>> Cui { get; }
 
-        internal SparseMatrix Ciu { get; }
+        internal Dictionary<int, Dictionary<int, double>> Ciu { get; }
 
-        public static AlternatingLeastSquaresData Load(LabeledMatrix data)
+        public static DataMatrix Load(Dictionary<string, Dictionary<string, double>> data)
         {
             if (data == null)
             {
@@ -57,8 +54,8 @@ namespace Implicit
 
             var userMap = new Dictionary<string, int>();
             var itemMap = new Dictionary<string, int>();
-            var Cui = new SparseMatrix();
-            var Ciu = new SparseMatrix();
+            var Cui = new Dictionary<int, Dictionary<int, double>>();
+            var Ciu = new Dictionary<int, Dictionary<int, double>>();
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
@@ -99,14 +96,14 @@ namespace Implicit
             }
 
             return
-                new AlternatingLeastSquaresData(
+                new DataMatrix(
                     userMap,
                     itemMap,
                     Cui,
                     Ciu);
         }
 
-        public static AlternatingLeastSquaresData Load(IEnumerable<DataRow> data)
+        public static DataMatrix Load(IEnumerable<DataRow> data)
         {
             if (data == null)
             {
@@ -115,8 +112,8 @@ namespace Implicit
 
             var userMap = new Dictionary<string, int>();
             var itemMap = new Dictionary<string, int>();
-            var Cui = new SparseMatrix();
-            var Ciu = new SparseMatrix();
+            var Cui = new Dictionary<int, Dictionary<int, double>>();
+            var Ciu = new Dictionary<int, Dictionary<int, double>>();
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
@@ -154,7 +151,7 @@ namespace Implicit
             }
 
             return
-                new AlternatingLeastSquaresData(
+                new DataMatrix(
                     userMap,
                     itemMap,
                     Cui,

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Implicit.Tests
 {
-    public class AlternatingLeastSquaresRecommenderTest : MatrixFactorizationRecommenderTest<AlternatingLeastSquaresRecommender>
+    public class AlternatingLeastSquaresRecommenderTest : MatrixFactorizationRecommenderTest<AlternatingLeastSquares>
     {
         [Fact]
         public void Factorize()
@@ -38,7 +38,7 @@ namespace Implicit.Tests
 
             foreach (var parameters in parametersScenarios)
             {
-                var recommender = AlternatingLeastSquares.Fit(AlternatingLeastSquaresData.Load(data), parameters);
+                var recommender = AlternatingLeastSquares.Fit(DataMatrix.Load(data), parameters);
 
                 Assert.True(recommender.Loss < 0.00001);
             }
@@ -63,7 +63,7 @@ namespace Implicit.Tests
 
             using (var reader = new StringReader(text))
             {
-                recommender2 = new AlternatingLeastSquaresRecommender(reader);
+                recommender2 = AlternatingLeastSquares.Load(reader);
             }
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
@@ -94,7 +94,7 @@ namespace Implicit.Tests
 
             using (var reader = new BinaryReader(stream))
             {
-                recommender2 = new AlternatingLeastSquaresRecommender(reader);
+                recommender2 = AlternatingLeastSquares.Load(reader);
             }
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
@@ -106,10 +106,10 @@ namespace Implicit.Tests
             }
         }
 
-        protected override AlternatingLeastSquaresRecommender CreateRecommender(Dictionary<string, Dictionary<string, double>> data)
+        protected override AlternatingLeastSquares CreateRecommender(Dictionary<string, Dictionary<string, double>> data)
         {
             var parameters = new AlternatingLeastSquaresParameters(factors: 3, regularization: 0, iterations: 15, useConjugateGradient: true);
-            var recommender = AlternatingLeastSquares.Fit(AlternatingLeastSquaresData.Load(data), parameters);
+            var recommender = AlternatingLeastSquares.Fit(DataMatrix.Load(data), parameters);
 
             return recommender;
         }

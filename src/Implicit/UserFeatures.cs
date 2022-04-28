@@ -2,11 +2,13 @@
 
 namespace Implicit
 {
-    public sealed class UserFactors
+    public sealed class UserFeatures
     {
+        internal const double Epsilon = 1e-10;
+
         private double? norm;
 
-        internal UserFactors(Vector<double> vector)
+        internal UserFeatures(Vector<double> vector)
         {
             this.Vector = vector;
         }
@@ -19,7 +21,7 @@ namespace Implicit
             }
         }
 
-        public double Norm
+        internal double Norm
         {
             get
             {
@@ -29,7 +31,7 @@ namespace Implicit
 
                     if (norm == 0.0)
                     {
-                        norm = AlternatingLeastSquares.Epsilon;
+                        norm = Epsilon;
                     }
 
                     this.norm = norm;
@@ -39,6 +41,6 @@ namespace Implicit
             }
         }
 
-        internal Vector<double> Vector { get; private set; }
+        internal Vector<double> Vector { get; }
     }
 }

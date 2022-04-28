@@ -1,19 +1,145 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
 
 namespace Implicit
 {
-    using SparseMatrix = Dictionary<int, Dictionary<int, double>>;
-
-    public static class AlternatingLeastSquares
+    public sealed class AlternatingLeastSquares : IRecommender, IMatrixFactorizationRecommender
     {
-        internal const double Epsilon = 1e-10;
+        private readonly int factors;
+        private readonly double regularization;
+        private readonly double loss;
+        private readonly Dictionary<string, int> userMap;
+        private readonly Dictionary<string, int> itemMap;
+        private readonly Matrix<double> userFactors;
+        private readonly Matrix<double> itemFactors;
+        private Vector<double>? itemNorms;
+        private Matrix<double>? yty;
 
-        public static AlternatingLeastSquaresRecommender Fit(AlternatingLeastSquaresData data, AlternatingLeastSquaresParameters parameters)
+        private AlternatingLeastSquares(
+            int factors,
+            double regularization,
+            double loss,
+            Dictionary<string, int> userMap,
+            Dictionary<string, int> itemMap,
+            Matrix<double> userFactors,
+            Matrix<double> itemFactors)
+        {
+            this.factors = factors;
+            this.regularization = regularization;
+            this.loss = loss;
+            this.userMap = userMap;
+            this.itemMap = itemMap;
+            this.userFactors = userFactors;
+            this.itemFactors = itemFactors;
+        }
+
+        public int Factors
+        {
+            get
+            {
+                return this.factors;
+            }
+        }
+
+        public double Regularization
+        {
+            get
+            {
+                return this.regularization;
+            }
+        }
+
+        public double Loss
+        {
+            get
+            {
+                return this.loss;
+            }
+        }
+
+        public Dictionary<string, double[]> UserFactors
+        {
+            get
+            {
+                var xu = Vector<double>.Build.Dense(this.factors);
+
+                return this.userMap
+                    .ToDictionary(
+                        o => o.Key,
+                        o =>
+                        {
+                            this.userFactors.Row(o.Value, xu);
+
+                            return xu.ToArray();
+                        });
+            }
+        }
+
+        public Dictionary<string, double[]> ItemFactors
+        {
+            get
+            {
+                var yi = Vector<double>.Build.Dense(this.factors);
+
+                return this.itemMap
+                    .ToDictionary(
+                        o => o.Key,
+                        o =>
+                        {
+                            this.itemFactors.Row(o.Value, yi);
+
+                            return yi.ToArray();
+                        });
+            }
+        }
+
+        private Vector<double> ItemNorms
+        {
+            get
+            {
+                if (this.itemNorms == null)
+                {
+                    var itemNorms = this.itemFactors.RowNorms(2.0);
+
+                    for (var i = 0; i < itemNorms.Count; i++)
+                    {
+                        if (itemNorms[i] == 0.0)
+                        {
+                            itemNorms[i] = UserFeatures.Epsilon;
+                        }
+                    }
+
+                    this.itemNorms = itemNorms;
+                }
+
+                return this.itemNorms;
+            }
+        }
+
+        private Matrix<double> YtY
+        {
+            get
+            {
+                if (this.yty == null)
+                {
+                    var Y = this.itemFactors;
+                    var YtY = Y.TransposeThisAndMultiply(Y);
+
+                    this.yty = YtY;
+                }
+
+                return this.yty;
+            }
+        }
+
+        public static AlternatingLeastSquares Fit(DataMatrix data, AlternatingLeastSquaresParameters parameters)
         {
             if (data == null)
             {
@@ -57,24 +183,382 @@ namespace Implicit
                 loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization);
             }
 
-            return new AlternatingLeastSquaresRecommender(
-                parameters.Factors,
-                parameters.Regularization,
-                loss,
-                userMap,
-                itemMap,
-                userFactors,
-                itemFactors);
+            return
+                new AlternatingLeastSquares(
+                    parameters.Factors,
+                    parameters.Regularization,
+                    loss,
+                    userMap,
+                    itemMap,
+                    userFactors,
+                    itemFactors);
         }
 
-        internal static Vector<double> UserFactor(Matrix<double> Y, Matrix<double> YtY, SparseMatrix Cui, int u, double regularization, int factors)
+        public static AlternatingLeastSquares Load(TextReader reader)
+        {
+            if (reader == null)
+            {
+                throw new ArgumentNullException(nameof(reader));
+            }
+
+            var factors = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+            var regularization = double.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+            var loss = double.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+
+            var users = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+            var items = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
+
+            var userMap = new Dictionary<string, int>();
+            var itemMap = new Dictionary<string, int>();
+            var userFactors = Matrix<double>.Build.Dense(users, factors);
+            var itemFactors = Matrix<double>.Build.Dense(items, factors);
+
+            for (var u = 0; u < users; u++)
+            {
+                var line = reader.ReadLine()!;
+                var parts = line.Split('\t');
+
+                userMap.Add(parts.First(), u);
+                userFactors.SetRow(u, parts.Skip(1).Select(o => double.Parse(o, CultureInfo.InvariantCulture)).ToArray());
+            }
+
+            for (var i = 0; i < items; i++)
+            {
+                var line = reader.ReadLine()!;
+                var parts = line.Split('\t');
+
+                itemMap.Add(parts.First(), i);
+                itemFactors.SetRow(i, parts.Skip(1).Select(o => double.Parse(o, CultureInfo.InvariantCulture)).ToArray());
+            }
+
+            return
+                new AlternatingLeastSquares(
+                    factors,
+                    regularization,
+                    loss,
+                    userMap,
+                    itemMap,
+                    userFactors,
+                    itemFactors);
+        }
+
+        public static AlternatingLeastSquares Load(BinaryReader reader)
+        {
+            if (reader == null)
+            {
+                throw new ArgumentNullException(nameof(reader));
+            }
+
+            var factors = reader.ReadInt32();
+            var regularization = reader.ReadDouble();
+            var loss = reader.ReadDouble();
+
+            var users = reader.ReadInt32();
+            var items = reader.ReadInt32();
+
+            var userMap = new Dictionary<string, int>();
+            var itemMap = new Dictionary<string, int>();
+            var userFactors = Matrix<double>.Build.Dense(users, factors);
+            var itemFactors = Matrix<double>.Build.Dense(items, factors);
+
+            var xu = Vector<double>.Build.Dense(factors);
+            var yi = Vector<double>.Build.Dense(factors);
+
+            for (var u = 0; u < users; u++)
+            {
+                var userId = reader.ReadString();
+
+                for (var f = 0; f < factors; f++)
+                {
+                    xu[f] = reader.ReadDouble();
+                }
+
+                userMap.Add(userId, u);
+                userFactors.SetRow(u, xu);
+            }
+
+            for (var i = 0; i < items; i++)
+            {
+                var itemId = reader.ReadString();
+
+                for (var f = 0; f < factors; f++)
+                {
+                    yi[f] = reader.ReadDouble();
+                }
+
+                itemMap.Add(itemId, i);
+                itemFactors.SetRow(i, yi);
+            }
+
+            return
+                new AlternatingLeastSquares(
+                    factors,
+                    regularization,
+                    loss,
+                    userMap,
+                    itemMap,
+                    userFactors,
+                    itemFactors);
+        }
+
+        public TResult RecommendUser<TResult>(string userId, IResultBuilderFactory<TResult> resultBuilderFactory)
+        {
+            if (userId == null)
+            {
+                throw new ArgumentNullException(nameof(userId));
+            }
+
+            if (!this.userMap.ContainsKey(userId))
+            {
+                return resultBuilderFactory.CreateEmpty();
+            }
+
+            var xu = this.userFactors.Row(this.userMap[userId]);
+            var user = new UserFeatures(xu);
+
+            return this.RecommendUser(user, resultBuilderFactory);
+        }
+
+        public TResult RecommendUser<TResult>(UserFeatures user, IResultBuilderFactory<TResult> resultBuilderFactory)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            var xu = user.Vector;
+            var yi = Vector<double>.Build.Dense(this.factors);
+
+            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
+
+            foreach (var item in this.itemMap)
+            {
+                this.itemFactors.Row(item.Value, yi);
+
+                resultBuilder.Append(item.Key, xu.DotProduct(yi));
+            }
+
+            return resultBuilder.ToResult();
+        }
+
+        public TResult RecommendItem<TResult>(string itemId, IResultBuilderFactory<TResult> resultBuilderFactory)
+        {
+            if (itemId == null)
+            {
+                throw new ArgumentNullException(nameof(itemId));
+            }
+
+            if (!this.itemMap.ContainsKey(itemId))
+            {
+                return resultBuilderFactory.CreateEmpty();
+            }
+
+            var yi = this.itemFactors.Row(this.itemMap[itemId]);
+            var yj = Vector<double>.Build.Dense(this.factors);
+
+            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
+
+            foreach (var item in this.itemMap)
+            {
+                var j = item.Value;
+
+                this.itemFactors.Row(j, yj);
+
+                resultBuilder.Append(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]);
+            }
+
+            return resultBuilder.ToResult();
+        }
+
+        public TResult RankUsers<TResult>(string userId, List<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
+        {
+            if (userId == null)
+            {
+                throw new ArgumentNullException(nameof(userId));
+            }
+
+            if (users == null)
+            {
+                throw new ArgumentNullException(nameof(users));
+            }
+
+            if (!this.userMap.ContainsKey(userId))
+            {
+                return resultBuilderFactory.CreateEmpty();
+            }
+
+            var xu = this.userFactors.Row(this.userMap[userId]);
+            var user = new UserFeatures(xu);
+
+            return this.RankUsers(user, users, resultBuilderFactory);
+        }
+
+        public TResult RankUsers<TResult>(UserFeatures user, List<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            if (users == null)
+            {
+                throw new ArgumentNullException(nameof(users));
+            }
+
+            var xu = user.Vector;
+
+            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: users.Count);
+
+            foreach (var pair in users)
+            {
+                var xv = pair.Value.Vector;
+                var norm = pair.Value.Norm;
+                var score = xu.DotProduct(xv) / norm;
+
+                resultBuilder.Append(pair.Key, score);
+            }
+
+            return resultBuilder.ToResult();
+        }
+
+        public UserFeatures? GetUserFeatures(string userId)
+        {
+            if (userId == null)
+            {
+                throw new ArgumentNullException(nameof(userId));
+            }
+
+            if (!this.userMap.ContainsKey(userId))
+            {
+                return null;
+            }
+
+            var xu = this.userFactors.Row(this.userMap[userId]);
+            var user = new UserFeatures(xu);
+
+            return user;
+        }
+
+        public UserFeatures ComputeUserFeatures(Dictionary<string, double> items)
+        {
+            if (items == null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+
+            var userItems = new Dictionary<int, double>(items.Count);
+
+            foreach (var item in items)
+            {
+                if (this.itemMap.TryGetValue(item.Key, out var i))
+                {
+                    userItems.Add(i, item.Value);
+                }
+            }
+
+            var u = 0;
+            var Cui = new Dictionary<int, Dictionary<int, double>>(1) { [u] = userItems };
+            var xu = AlternatingLeastSquares.UserFactor(this.itemFactors, this.YtY, Cui, u, this.regularization, this.factors);
+
+            return new UserFeatures(xu);
+        }
+
+        public void Save(TextWriter writer)
+        {
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
+            var xu = Vector<double>.Build.Dense(this.factors);
+            var yi = Vector<double>.Build.Dense(this.factors);
+
+            writer.WriteLine(this.factors.ToString(CultureInfo.InvariantCulture));
+            writer.WriteLine(this.regularization.ToString(CultureInfo.InvariantCulture));
+            writer.WriteLine(this.loss.ToString(CultureInfo.InvariantCulture));
+            writer.WriteLine(this.userMap.Count.ToString(CultureInfo.InvariantCulture));
+            writer.WriteLine(this.itemMap.Count.ToString(CultureInfo.InvariantCulture));
+
+            foreach (var pair in this.userMap)
+            {
+                this.userFactors.Row(pair.Value, xu);
+
+                writer.Write(pair.Key);
+
+                for (var i = 0; i < this.factors; i++)
+                {
+                    writer.Write('\t');
+                    writer.Write(xu[i].ToString("R", CultureInfo.InvariantCulture));
+                }
+
+                writer.WriteLine();
+            }
+
+            foreach (var pair in this.itemMap)
+            {
+                this.itemFactors.Row(pair.Value, yi);
+
+                writer.Write(pair.Key);
+
+                for (var i = 0; i < this.factors; i++)
+                {
+                    writer.Write('\t');
+                    writer.Write(yi[i].ToString("R", CultureInfo.InvariantCulture));
+                }
+
+                writer.WriteLine();
+            }
+        }
+
+        public void Save(BinaryWriter writer)
+        {
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
+            var xu = Vector<double>.Build.Dense(this.factors);
+            var yi = Vector<double>.Build.Dense(this.factors);
+
+            writer.Write(this.factors);
+            writer.Write(this.regularization);
+            writer.Write(this.loss);
+            writer.Write(this.userMap.Count);
+            writer.Write(this.itemMap.Count);
+
+            foreach (var pair in this.userMap)
+            {
+                this.userFactors.Row(pair.Value, xu);
+
+                writer.Write(pair.Key);
+
+                for (var f = 0; f < this.factors; f++)
+                {
+                    writer.Write(xu[f]);
+                }
+            }
+
+            foreach (var pair in this.itemMap)
+            {
+                this.itemFactors.Row(pair.Value, yi);
+
+                writer.Write(pair.Key);
+
+                for (var f = 0; f < this.factors; f++)
+                {
+                    writer.Write(yi[f]);
+                }
+            }
+        }
+
+        private static Vector<double> UserFactor(Matrix<double> Y, Matrix<double> YtY, Dictionary<int, Dictionary<int, double>> Cui, int u, double regularization, int factors)
         {
             var equation = UserLinearEquation(Y, YtY, Cui, u, regularization, factors);
 
             return equation.A.Solve(equation.b);
         }
 
-        private static LinearEquation UserLinearEquation(Matrix<double> Y, Matrix<double> YtY, SparseMatrix Cui, int u, double regularization, int factors)
+        private static (Matrix<double> A, Vector<double> b) UserLinearEquation(Matrix<double> Y, Matrix<double> YtY, Dictionary<int, Dictionary<int, double>> Cui, int u, double regularization, int factors)
         {
             var yi = Vector<double>.Build.Dense(factors);
             var A = YtY.Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
@@ -90,11 +574,11 @@ namespace Implicit
                 b.Add(yi.Multiply(confidence), b);
             }
 
-            return new LinearEquation(A, b);
+            return (A, b);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
-        private static void LeastSquares(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static void LeastSquares(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y);
@@ -108,7 +592,7 @@ namespace Implicit
                 });
         }
 
-        private static void LeastSquaresFast(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static void LeastSquaresFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
@@ -153,7 +637,7 @@ namespace Implicit
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
-        private static void LeastSquaresConjugateGradient(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
+        private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
         {
             var users = X.RowCount;
             var factors = X.ColumnCount;
@@ -196,7 +680,7 @@ namespace Implicit
 
                     var rsnew = r.DotProduct(r);
 
-                    if (rsnew < Epsilon)
+                    if (rsnew < UserFeatures.Epsilon)
                     {
                         break;
                     }
@@ -209,7 +693,7 @@ namespace Implicit
             });
         }
 
-        private static void LeastSquaresConjugateGradientFast(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
+        private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
         {
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
@@ -269,7 +753,7 @@ namespace Implicit
 
                         var rsnew = s.r.DotProduct(s.r);
 
-                        if (rsnew < Epsilon)
+                        if (rsnew < UserFeatures.Epsilon)
                         {
                             break;
                         }
@@ -286,7 +770,7 @@ namespace Implicit
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
-        private static double CalculateLoss(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static double CalculateLoss(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var nnz = 0;
             var loss = 0.0;
@@ -336,7 +820,7 @@ namespace Implicit
             return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
         }
 
-        private static double CalculateLossFast(SparseMatrix Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static double CalculateLossFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
         {
             var mutex = new object();
             var factors = X.ColumnCount;
@@ -426,21 +910,6 @@ namespace Implicit
             loss += regularization * (item_norm + user_norm);
 
             return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
-        }
-
-        private readonly struct LinearEquation
-        {
-            public LinearEquation(Matrix<double> A, Vector<double> b)
-            {
-                this.A = A;
-                this.b = b;
-            }
-
-            public Matrix<double> A { get; }
-
-
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Readability for linear equation coefficients.")]
-            public Vector<double> b { get; }
         }
     }
 }

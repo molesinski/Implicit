@@ -6,7 +6,7 @@ namespace Implicit.Benchmark
 {
     public class AlternatingLeastSquaresBenchmark
     {
-        private AlternatingLeastSquaresData? data;
+        private DataMatrix? data;
 
         public enum ProviderId
         {
@@ -33,7 +33,7 @@ namespace Implicit.Benchmark
                     break;
             }
 
-            this.data = AlternatingLeastSquaresData.Load(DataFactory.GetLastFm360k());
+            this.data = DataMatrix.Load(DataFactory.GetLastFm360k());
         }
 
         [Benchmark(OperationsPerInvoke = 1)]

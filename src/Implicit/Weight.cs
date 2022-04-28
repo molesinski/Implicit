@@ -4,11 +4,9 @@ using System.Linq;
 
 namespace Implicit
 {
-    using LabeledMatrix = Dictionary<string, Dictionary<string, double>>;
-
     public static class Weight
     {
-        public static LabeledMatrix TFIDF(LabeledMatrix data)
+        public static Dictionary<string, Dictionary<string, double>> TFIDF(Dictionary<string, Dictionary<string, double>> data)
         {
             if (data == null)
             {
@@ -61,7 +59,7 @@ namespace Implicit
                     });
         }
 
-        public static LabeledMatrix BM25(LabeledMatrix data, int K1 = 100, double B = 0.5)
+        public static Dictionary<string, Dictionary<string, double>> BM25(Dictionary<string, Dictionary<string, double>> data, int K1 = 100, double B = 0.5)
         {
             if (data == null)
             {
