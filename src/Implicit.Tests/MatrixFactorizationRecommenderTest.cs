@@ -49,7 +49,7 @@ namespace Implicit.Tests
 #if NETCOREAPP || NETSTANDARD2_1_OR_GREATER
 
         [Fact]
-        public void RecommendUserForItemArrayPool()
+        public void RecommendUserForItemPooled()
         {
             var n = 50;
             var data = this.CreateCheckerBoard(n);
@@ -58,7 +58,7 @@ namespace Implicit.Tests
             foreach (var itemId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
                 var user = recommender.ComputeUserFactors(new[] { itemId });
-                using var result = recommender.RecommendUser(user, ArrayPoolRecommenderResultBuilderFactory.Shared);
+                using var result = recommender.RecommendUser(user, PooledRecommenderResultBuilderFactory.Shared);
                 var items = result.Keys.Take(11);
 
                 var parity = items
@@ -73,7 +73,7 @@ namespace Implicit.Tests
         }
 
         [Fact]
-        public void RecommendUserForItemsArrayPool()
+        public void RecommendUserForItemsPooled()
         {
             var n = 50;
             var data = this.CreateCheckerBoard(n);
@@ -82,8 +82,8 @@ namespace Implicit.Tests
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {
                 var user = recommender.ComputeUserFactors(data[userId].Keys);
-                using var result1 = recommender.RecommendUser(userId, ArrayPoolRecommenderResultBuilderFactory.Shared);
-                using var result2 = recommender.RecommendUser(user, ArrayPoolRecommenderResultBuilderFactory.Shared);
+                using var result1 = recommender.RecommendUser(userId, PooledRecommenderResultBuilderFactory.Shared);
+                using var result2 = recommender.RecommendUser(user, PooledRecommenderResultBuilderFactory.Shared);
                 var items1 = result1.Keys.Take(25);
                 var items2 = result2.Keys.Take(25);
 

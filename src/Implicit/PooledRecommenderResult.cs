@@ -7,13 +7,13 @@ using System.Collections.Generic;
 
 namespace Implicit
 {
-    public sealed class ArrayPoolRecommenderResult : IDisposable
+    public sealed class PooledRecommenderResult : IDisposable
     {
         private readonly KeyValuePair<string, double>[] storage;
         private readonly ArrayPool<KeyValuePair<string, double>>? pool;
         private bool disposed;
 
-        internal ArrayPoolRecommenderResult(KeyValuePair<string, double>[] storage, int count, ArrayPool<KeyValuePair<string, double>>? pool)
+        internal PooledRecommenderResult(KeyValuePair<string, double>[] storage, int count, ArrayPool<KeyValuePair<string, double>>? pool)
         {
             this.pool = pool;
             this.storage = storage;

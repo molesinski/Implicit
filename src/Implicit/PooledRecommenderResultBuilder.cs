@@ -6,14 +6,14 @@ using System.Collections.Generic;
 
 namespace Implicit
 {
-    public sealed class ArrayPoolRecommenderResultBuilder : IResultBuilder<ArrayPoolRecommenderResult>
+    public sealed class PooledRecommenderResultBuilder : IResultBuilder<PooledRecommenderResult>
     {
         private readonly KeyValuePair<string, double>[] storage;
         private readonly int length;
         private readonly ArrayPool<KeyValuePair<string, double>> pool;
         private int count;
 
-        internal ArrayPoolRecommenderResultBuilder(KeyValuePair<string, double>[] storage, ArrayPool<KeyValuePair<string, double>> pool)
+        internal PooledRecommenderResultBuilder(KeyValuePair<string, double>[] storage, ArrayPool<KeyValuePair<string, double>> pool)
         {
             this.storage = storage;
             this.length = storage.Length;
@@ -32,11 +32,11 @@ namespace Implicit
             this.count++;
         }
 
-        public ArrayPoolRecommenderResult ToResult()
+        public PooledRecommenderResult ToResult()
         {
             Array.Sort(this.storage, 0, this.count, DescendingScoreComparer.Instance);
 
-            return new ArrayPoolRecommenderResult(this.storage, this.count, this.pool);
+            return new PooledRecommenderResult(this.storage, this.count, this.pool);
         }
 
         private class DescendingScoreComparer : IComparer<KeyValuePair<string, double>>
