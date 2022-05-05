@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace Implicit.Tests
@@ -45,57 +44,19 @@ namespace Implicit.Tests
         }
 
         [Fact]
-        public void TextSaveLoad()
+        public void SaveLoad()
         {
             var n = 50;
             var data = this.CreateCheckerBoard(n);
             var recommender1 = this.CreateRecommender(data);
-            var recommender2 = recommender1;
-
-            var builder = new StringBuilder();
-
-            using (var writer = new StringWriter(builder))
-            {
-                recommender1.Save(writer);
-            }
-
-            var text = builder.ToString();
-
-            using (var reader = new StringReader(text))
-            {
-                recommender2 = AlternatingLeastSquares.Load(reader);
-            }
-
-            foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
-            {
-                var items1 = recommender1.RecommendUser(userId).Keys;
-                var items2 = recommender2.RecommendUser(userId).Keys;
-
-                Assert.True(items1.SequenceEqual(items2));
-            }
-        }
-
-        [Fact]
-        public void BinarySaveLoad()
-        {
-            var n = 50;
-            var data = this.CreateCheckerBoard(n);
-            var recommender1 = this.CreateRecommender(data);
-            var recommender2 = recommender1;
 
             var stream = new MemoryStream();
 
-            using (var writer = new BinaryWriter(stream, Encoding.ASCII, leaveOpen: true))
-            {
-                recommender1.Save(writer);
-            }
+            recommender1.Save(stream);
 
             stream.Seek(0, SeekOrigin.Begin);
 
-            using (var reader = new BinaryReader(stream))
-            {
-                recommender2 = AlternatingLeastSquares.Load(reader);
-            }
+            var recommender2 = AlternatingLeastSquares.Load(stream);
 
             foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
             {

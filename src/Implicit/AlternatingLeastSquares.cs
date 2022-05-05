@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
@@ -194,111 +194,66 @@ namespace Implicit
                     itemFactors);
         }
 
-        public static AlternatingLeastSquares Load(TextReader reader)
+        public static AlternatingLeastSquares Load(Stream stream)
         {
-            if (reader == null)
+            if (stream == null)
             {
-                throw new ArgumentNullException(nameof(reader));
+                throw new ArgumentNullException(nameof(stream));
             }
 
-            var factors = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
-            var regularization = double.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
-            var loss = double.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
-
-            var users = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
-            var items = int.Parse(reader.ReadLine()!, CultureInfo.InvariantCulture);
-
-            var userMap = new Dictionary<string, int>();
-            var itemMap = new Dictionary<string, int>();
-            var userFactors = Matrix<double>.Build.Dense(users, factors);
-            var itemFactors = Matrix<double>.Build.Dense(items, factors);
-
-            for (var u = 0; u < users; u++)
+            using (var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true))
             {
-                var line = reader.ReadLine()!;
-                var parts = line.Split('\t');
+                var factors = reader.ReadInt32();
+                var regularization = reader.ReadDouble();
+                var loss = reader.ReadDouble();
 
-                userMap.Add(parts.First(), u);
-                userFactors.SetRow(u, parts.Skip(1).Select(o => double.Parse(o, CultureInfo.InvariantCulture)).ToArray());
-            }
+                var users = reader.ReadInt32();
+                var items = reader.ReadInt32();
 
-            for (var i = 0; i < items; i++)
-            {
-                var line = reader.ReadLine()!;
-                var parts = line.Split('\t');
+                var userMap = new Dictionary<string, int>();
+                var itemMap = new Dictionary<string, int>();
+                var userFactors = Matrix<double>.Build.Dense(users, factors);
+                var itemFactors = Matrix<double>.Build.Dense(items, factors);
 
-                itemMap.Add(parts.First(), i);
-                itemFactors.SetRow(i, parts.Skip(1).Select(o => double.Parse(o, CultureInfo.InvariantCulture)).ToArray());
-            }
+                var xu = Vector<double>.Build.Dense(factors);
+                var yi = Vector<double>.Build.Dense(factors);
 
-            return
-                new AlternatingLeastSquares(
-                    factors,
-                    regularization,
-                    loss,
-                    userMap,
-                    itemMap,
-                    userFactors,
-                    itemFactors);
-        }
-
-        public static AlternatingLeastSquares Load(BinaryReader reader)
-        {
-            if (reader == null)
-            {
-                throw new ArgumentNullException(nameof(reader));
-            }
-
-            var factors = reader.ReadInt32();
-            var regularization = reader.ReadDouble();
-            var loss = reader.ReadDouble();
-
-            var users = reader.ReadInt32();
-            var items = reader.ReadInt32();
-
-            var userMap = new Dictionary<string, int>();
-            var itemMap = new Dictionary<string, int>();
-            var userFactors = Matrix<double>.Build.Dense(users, factors);
-            var itemFactors = Matrix<double>.Build.Dense(items, factors);
-
-            var xu = Vector<double>.Build.Dense(factors);
-            var yi = Vector<double>.Build.Dense(factors);
-
-            for (var u = 0; u < users; u++)
-            {
-                var userId = reader.ReadString();
-
-                for (var f = 0; f < factors; f++)
+                for (var u = 0; u < users; u++)
                 {
-                    xu[f] = reader.ReadDouble();
+                    var userId = reader.ReadString();
+
+                    for (var f = 0; f < factors; f++)
+                    {
+                        xu[f] = reader.ReadDouble();
+                    }
+
+                    userMap.Add(userId, u);
+                    userFactors.SetRow(u, xu);
                 }
 
-                userMap.Add(userId, u);
-                userFactors.SetRow(u, xu);
-            }
-
-            for (var i = 0; i < items; i++)
-            {
-                var itemId = reader.ReadString();
-
-                for (var f = 0; f < factors; f++)
+                for (var i = 0; i < items; i++)
                 {
-                    yi[f] = reader.ReadDouble();
+                    var itemId = reader.ReadString();
+
+                    for (var f = 0; f < factors; f++)
+                    {
+                        yi[f] = reader.ReadDouble();
+                    }
+
+                    itemMap.Add(itemId, i);
+                    itemFactors.SetRow(i, yi);
                 }
 
-                itemMap.Add(itemId, i);
-                itemFactors.SetRow(i, yi);
+                return
+                    new AlternatingLeastSquares(
+                        factors,
+                        regularization,
+                        loss,
+                        userMap,
+                        itemMap,
+                        userFactors,
+                        itemFactors);
             }
-
-            return
-                new AlternatingLeastSquares(
-                    factors,
-                    regularization,
-                    loss,
-                    userMap,
-                    itemMap,
-                    userFactors,
-                    itemFactors);
         }
 
         public TResult RecommendUser<TResult>(string userId, IResultBuilderFactory<TResult> resultBuilderFactory)
@@ -463,90 +418,46 @@ namespace Implicit
             return new UserFeatures(xu);
         }
 
-        public void Save(TextWriter writer)
+        public void Save(Stream stream)
         {
-            if (writer == null)
+            if (stream == null)
             {
-                throw new ArgumentNullException(nameof(writer));
+                throw new ArgumentNullException(nameof(stream));
             }
 
-            var xu = Vector<double>.Build.Dense(this.factors);
-            var yi = Vector<double>.Build.Dense(this.factors);
-
-            writer.WriteLine(this.factors.ToString(CultureInfo.InvariantCulture));
-            writer.WriteLine(this.regularization.ToString(CultureInfo.InvariantCulture));
-            writer.WriteLine(this.loss.ToString(CultureInfo.InvariantCulture));
-            writer.WriteLine(this.userMap.Count.ToString(CultureInfo.InvariantCulture));
-            writer.WriteLine(this.itemMap.Count.ToString(CultureInfo.InvariantCulture));
-
-            foreach (var pair in this.userMap)
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true))
             {
-                this.userFactors.Row(pair.Value, xu);
+                var xu = Vector<double>.Build.Dense(this.factors);
+                var yi = Vector<double>.Build.Dense(this.factors);
 
-                writer.Write(pair.Key);
+                writer.Write(this.factors);
+                writer.Write(this.regularization);
+                writer.Write(this.loss);
+                writer.Write(this.userMap.Count);
+                writer.Write(this.itemMap.Count);
 
-                for (var i = 0; i < this.factors; i++)
+                foreach (var pair in this.userMap)
                 {
-                    writer.Write('\t');
-                    writer.Write(xu[i].ToString("R", CultureInfo.InvariantCulture));
+                    this.userFactors.Row(pair.Value, xu);
+
+                    writer.Write(pair.Key);
+
+                    for (var f = 0; f < this.factors; f++)
+                    {
+                        writer.Write(xu[f]);
+                    }
                 }
 
-                writer.WriteLine();
-            }
-
-            foreach (var pair in this.itemMap)
-            {
-                this.itemFactors.Row(pair.Value, yi);
-
-                writer.Write(pair.Key);
-
-                for (var i = 0; i < this.factors; i++)
+                foreach (var pair in this.itemMap)
                 {
-                    writer.Write('\t');
-                    writer.Write(yi[i].ToString("R", CultureInfo.InvariantCulture));
-                }
+                    this.itemFactors.Row(pair.Value, yi);
 
-                writer.WriteLine();
-            }
-        }
+                    writer.Write(pair.Key);
 
-        public void Save(BinaryWriter writer)
-        {
-            if (writer == null)
-            {
-                throw new ArgumentNullException(nameof(writer));
-            }
-
-            var xu = Vector<double>.Build.Dense(this.factors);
-            var yi = Vector<double>.Build.Dense(this.factors);
-
-            writer.Write(this.factors);
-            writer.Write(this.regularization);
-            writer.Write(this.loss);
-            writer.Write(this.userMap.Count);
-            writer.Write(this.itemMap.Count);
-
-            foreach (var pair in this.userMap)
-            {
-                this.userFactors.Row(pair.Value, xu);
-
-                writer.Write(pair.Key);
-
-                for (var f = 0; f < this.factors; f++)
-                {
-                    writer.Write(xu[f]);
-                }
-            }
-
-            foreach (var pair in this.itemMap)
-            {
-                this.itemFactors.Row(pair.Value, yi);
-
-                writer.Write(pair.Key);
-
-                for (var f = 0; f < this.factors; f++)
-                {
-                    writer.Write(yi[f]);
+                    for (var f = 0; f < this.factors; f++)
+                    {
+                        writer.Write(yi[f]);
+                    }
                 }
             }
         }
