@@ -181,6 +181,7 @@ dotnet_separate_import_directive_groups = false
 
 # Analyzer rules
 
+dotnet_diagnostic.CA1014.severity = silent
 dotnet_diagnostic.CA1716.severity = silent
 dotnet_diagnostic.CA1711.severity = silent
 dotnet_diagnostic.CA2225.severity = silent
