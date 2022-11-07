@@ -51,7 +51,7 @@ namespace Implicit.Tests
             var data = this.CreateCheckerBoard(n);
             var recommender1 = this.CreateRecommender(data);
 
-            var stream = new MemoryStream();
+            using var stream = new MemoryStream();
 
             recommender1.Save(stream);
 

@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Solution", ".Solution", "{5B54E306-0440-46CA-8C2C-A818A65A12BC}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		.globalconfig = .globalconfig
 		azure-pipelines.yml = azure-pipelines.yml
 		LICENSE = LICENSE
 		README.md = README.md
