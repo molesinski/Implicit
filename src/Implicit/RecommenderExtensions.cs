@@ -8,12 +8,12 @@ namespace Implicit
             this IRecommender recommender,
             string userId)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (userId == null)
+            if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
             }
@@ -25,12 +25,12 @@ namespace Implicit
             this IRecommender recommender,
             string itemId)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (itemId == null)
+            if (itemId is null)
             {
                 throw new ArgumentNullException(nameof(itemId));
             }

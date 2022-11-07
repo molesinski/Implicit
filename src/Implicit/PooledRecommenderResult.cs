@@ -7,152 +7,125 @@ using System.Collections.Generic;
 
 namespace Implicit
 {
-    public sealed class PooledRecommenderResult : IDisposable
+    public sealed class PooledRecommenderResult : IReadOnlyList<string>, IDisposable
     {
         private readonly KeyValuePair<string, double>[] storage;
+        private readonly int count;
         private readonly ArrayPool<KeyValuePair<string, double>>? pool;
         private bool disposed;
 
         internal PooledRecommenderResult(KeyValuePair<string, double>[] storage, int count, ArrayPool<KeyValuePair<string, double>>? pool)
         {
-            this.pool = pool;
             this.storage = storage;
-
-            this.IsEmpty = count == 0;
-            this.Keys = new KeysCollection(storage, count);
+            this.count = count;
+            this.pool = pool;
         }
 
-        public bool IsEmpty { get; }
+        public int Count
+        {
+            get
+            {
+                return this.count;
+            }
+        }
 
-        public KeysCollection Keys { get; }
+        public string this[int index]
+        {
+            get
+            {
+                if (index < 0 || index >= this.count)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                }
 
-        private void Dispose(bool disposing)
+                return this.storage[index].Key;
+            }
+        }
+
+        public Enumerator GetEnumerator()
+        {
+            return new Enumerator(this.storage, this.count);
+        }
+
+        IEnumerator<string> IEnumerable<string>.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+        public void Dispose()
         {
             if (!this.disposed)
             {
-                if (disposing)
-                {
-                    this.pool?.Return(this.storage);
-                }
-
+                this.pool?.Return(this.storage);
                 this.disposed = true;
             }
         }
 
-        void IDisposable.Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-
-        public sealed class KeysCollection : IEnumerable<string>
+        public struct Enumerator : IEnumerator<string>
         {
             private readonly KeyValuePair<string, double>[] storage;
             private readonly int count;
+            private int index;
+            private string? current;
 
-            internal KeysCollection(KeyValuePair<string, double>[] storage, int count)
+            internal Enumerator(KeyValuePair<string, double>[] storage, int count)
             {
                 this.storage = storage;
                 this.count = count;
+                this.index = 0;
+                this.current = default;
             }
 
-            public string this[int index]
+            public string Current
             {
                 get
                 {
-                    if (index < 0 || index >= this.count)
+                    if (this.index == 0 || this.index == this.count + 1)
                     {
-                        throw new ArgumentOutOfRangeException(nameof(index));
+                        throw new InvalidOperationException("Enumerator is currently positioned before first element or after last element.");
                     }
 
-                    return this.storage[index].Key;
+                    return this.current!;
                 }
             }
 
-            public int Count
+            object IEnumerator.Current
             {
                 get
                 {
-                    return this.count;
+                    return this.Current;
                 }
             }
 
-            public Enumerator GetEnumerator()
+            public bool MoveNext()
             {
-                return new Enumerator(this.storage, this.count);
+                if (this.index < this.count)
+                {
+                    this.current = this.storage[this.index].Key;
+                    this.index++;
+
+                    return true;
+                }
+
+                this.index = this.count + 1;
+                this.current = default;
+
+                return false;
             }
 
-            IEnumerator<string> IEnumerable<string>.GetEnumerator()
+            public void Reset()
             {
-                return this.GetEnumerator();
+                this.index = 0;
+                this.current = default;
             }
 
-            IEnumerator IEnumerable.GetEnumerator()
+            public void Dispose()
             {
-                return this.GetEnumerator();
-            }
-
-            public struct Enumerator : IEnumerator<string>
-            {
-                private readonly KeyValuePair<string, double>[] storage;
-                private readonly int count;
-                private int index;
-                private string? current;
-
-                internal Enumerator(KeyValuePair<string, double>[] storage, int count)
-                {
-                    this.storage = storage;
-                    this.count = count;
-                    this.index = 0;
-                    this.current = default;
-                }
-
-                public string Current
-                {
-                    get
-                    {
-                        if (this.index == 0 || this.index == this.count + 1)
-                        {
-                            throw new InvalidOperationException("Enumerator is currently positioned before first element or after last element.");
-                        }
-
-                        return this.current!;
-                    }
-                }
-
-                object IEnumerator.Current
-                {
-                    get
-                    {
-                        return this.Current;
-                    }
-                }
-
-                public bool MoveNext()
-                {
-                    if (this.index < this.count)
-                    {
-                        this.current = this.storage[this.index].Key;
-                        this.index++;
-
-                        return true;
-                    }
-
-                    this.index = this.count + 1;
-                    this.current = default;
-
-                    return false;
-                }
-
-                public void Reset()
-                {
-                    this.index = 0;
-                    this.current = default;
-                }
-
-                public void Dispose()
-                {
-                }
             }
         }
     }

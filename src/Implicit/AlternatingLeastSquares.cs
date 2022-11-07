@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable SA1312 // Variable names should begin with lower-case letter
+#pragma warning disable SA1313 // Variable names should begin with lower-case letter
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -104,7 +107,7 @@ namespace Implicit
         {
             get
             {
-                if (this.itemNorms == null)
+                if (this.itemNorms is null)
                 {
                     var itemNorms = this.itemFactors.RowNorms(2.0);
 
@@ -127,7 +130,7 @@ namespace Implicit
         {
             get
             {
-                if (this.yty == null)
+                if (this.yty is null)
                 {
                     var Y = this.itemFactors;
                     var YtY = Y.TransposeThisAndMultiply(Y);
@@ -141,9 +144,14 @@ namespace Implicit
 
         public static AlternatingLeastSquares Fit(DataMatrix data, AlternatingLeastSquaresParameters parameters)
         {
-            if (data == null)
+            if (data is null)
             {
                 throw new ArgumentNullException(nameof(data));
+            }
+
+            if (parameters is null)
+            {
+                throw new ArgumentNullException(nameof(parameters));
             }
 
             var userMap = data.UserMap;
@@ -196,71 +204,75 @@ namespace Implicit
 
         public static AlternatingLeastSquares Load(Stream stream)
         {
-            if (stream == null)
+            if (stream is null)
             {
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            using (var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true))
+            using var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true);
+
+            var factors = reader.ReadInt32();
+            var regularization = reader.ReadDouble();
+            var loss = reader.ReadDouble();
+
+            var users = reader.ReadInt32();
+            var items = reader.ReadInt32();
+
+            var userMap = new Dictionary<string, int>();
+            var itemMap = new Dictionary<string, int>();
+            var userFactors = Matrix<double>.Build.Dense(users, factors);
+            var itemFactors = Matrix<double>.Build.Dense(items, factors);
+
+            var xu = Vector<double>.Build.Dense(factors);
+            var yi = Vector<double>.Build.Dense(factors);
+
+            for (var u = 0; u < users; u++)
             {
-                var factors = reader.ReadInt32();
-                var regularization = reader.ReadDouble();
-                var loss = reader.ReadDouble();
+                var userId = reader.ReadString();
 
-                var users = reader.ReadInt32();
-                var items = reader.ReadInt32();
-
-                var userMap = new Dictionary<string, int>();
-                var itemMap = new Dictionary<string, int>();
-                var userFactors = Matrix<double>.Build.Dense(users, factors);
-                var itemFactors = Matrix<double>.Build.Dense(items, factors);
-
-                var xu = Vector<double>.Build.Dense(factors);
-                var yi = Vector<double>.Build.Dense(factors);
-
-                for (var u = 0; u < users; u++)
+                for (var f = 0; f < factors; f++)
                 {
-                    var userId = reader.ReadString();
-
-                    for (var f = 0; f < factors; f++)
-                    {
-                        xu[f] = reader.ReadDouble();
-                    }
-
-                    userMap.Add(userId, u);
-                    userFactors.SetRow(u, xu);
+                    xu[f] = reader.ReadDouble();
                 }
 
-                for (var i = 0; i < items; i++)
-                {
-                    var itemId = reader.ReadString();
-
-                    for (var f = 0; f < factors; f++)
-                    {
-                        yi[f] = reader.ReadDouble();
-                    }
-
-                    itemMap.Add(itemId, i);
-                    itemFactors.SetRow(i, yi);
-                }
-
-                return
-                    new AlternatingLeastSquares(
-                        factors,
-                        regularization,
-                        loss,
-                        userMap,
-                        itemMap,
-                        userFactors,
-                        itemFactors);
+                userMap.Add(userId, u);
+                userFactors.SetRow(u, xu);
             }
+
+            for (var i = 0; i < items; i++)
+            {
+                var itemId = reader.ReadString();
+
+                for (var f = 0; f < factors; f++)
+                {
+                    yi[f] = reader.ReadDouble();
+                }
+
+                itemMap.Add(itemId, i);
+                itemFactors.SetRow(i, yi);
+            }
+
+            return
+                new AlternatingLeastSquares(
+                    factors,
+                    regularization,
+                    loss,
+                    userMap,
+                    itemMap,
+                    userFactors,
+                    itemFactors);
         }
 
         public TResult RecommendUser<TResult>(string userId, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
-            if (userId == null)
+            if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
+            }
+
+            if (resultBuilderFactory is null)
+            {
+                throw new ArgumentNullException(nameof(resultBuilderFactory));
             }
 
             if (!this.userMap.ContainsKey(userId))
@@ -276,9 +288,14 @@ namespace Implicit
 
         public TResult RecommendUser<TResult>(UserFeatures user, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
+            }
+
+            if (resultBuilderFactory is null)
+            {
+                throw new ArgumentNullException(nameof(resultBuilderFactory));
             }
 
             var xu = user.Vector;
@@ -298,9 +315,14 @@ namespace Implicit
 
         public TResult RecommendItem<TResult>(string itemId, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
-            if (itemId == null)
+            if (itemId is null)
             {
                 throw new ArgumentNullException(nameof(itemId));
+            }
+
+            if (resultBuilderFactory is null)
+            {
+                throw new ArgumentNullException(nameof(resultBuilderFactory));
             }
 
             if (!this.itemMap.ContainsKey(itemId))
@@ -325,16 +347,21 @@ namespace Implicit
             return resultBuilder.ToResult();
         }
 
-        public TResult RankUsers<TResult>(string userId, List<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
+        public TResult RankUsers<TResult>(string userId, IEnumerable<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
-            if (userId == null)
+            if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            if (users == null)
+            if (users is null)
             {
                 throw new ArgumentNullException(nameof(users));
+            }
+
+            if (resultBuilderFactory is null)
+            {
+                throw new ArgumentNullException(nameof(resultBuilderFactory));
             }
 
             if (!this.userMap.ContainsKey(userId))
@@ -348,21 +375,26 @@ namespace Implicit
             return this.RankUsers(user, users, resultBuilderFactory);
         }
 
-        public TResult RankUsers<TResult>(UserFeatures user, List<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
+        public TResult RankUsers<TResult>(UserFeatures user, IEnumerable<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
         {
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (users == null)
+            if (users is null)
             {
                 throw new ArgumentNullException(nameof(users));
             }
 
+            if (resultBuilderFactory is null)
+            {
+                throw new ArgumentNullException(nameof(resultBuilderFactory));
+            }
+
             var xu = user.Vector;
 
-            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: users.Count);
+            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: users.Count());
 
             foreach (var pair in users)
             {
@@ -378,7 +410,7 @@ namespace Implicit
 
         public UserFeatures? GetUserFeatures(string userId)
         {
-            if (userId == null)
+            if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
             }
@@ -396,7 +428,7 @@ namespace Implicit
 
         public UserFeatures ComputeUserFeatures(Dictionary<string, double> items)
         {
-            if (items == null)
+            if (items is null)
             {
                 throw new ArgumentNullException(nameof(items));
             }
@@ -420,56 +452,55 @@ namespace Implicit
 
         public void Save(Stream stream)
         {
-            if (stream == null)
+            if (stream is null)
             {
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            using (var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true))
+            using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
+
+            var xu = Vector<double>.Build.Dense(this.factors);
+            var yi = Vector<double>.Build.Dense(this.factors);
+
+            writer.Write(this.factors);
+            writer.Write(this.regularization);
+            writer.Write(this.loss);
+            writer.Write(this.userMap.Count);
+            writer.Write(this.itemMap.Count);
+
+            foreach (var pair in this.userMap)
             {
-                var xu = Vector<double>.Build.Dense(this.factors);
-                var yi = Vector<double>.Build.Dense(this.factors);
+                this.userFactors.Row(pair.Value, xu);
 
-                writer.Write(this.factors);
-                writer.Write(this.regularization);
-                writer.Write(this.loss);
-                writer.Write(this.userMap.Count);
-                writer.Write(this.itemMap.Count);
+                writer.Write(pair.Key);
 
-                foreach (var pair in this.userMap)
+                for (var f = 0; f < this.factors; f++)
                 {
-                    this.userFactors.Row(pair.Value, xu);
-
-                    writer.Write(pair.Key);
-
-                    for (var f = 0; f < this.factors; f++)
-                    {
-                        writer.Write(xu[f]);
-                    }
+                    writer.Write(xu[f]);
                 }
+            }
 
-                foreach (var pair in this.itemMap)
+            foreach (var pair in this.itemMap)
+            {
+                this.itemFactors.Row(pair.Value, yi);
+
+                writer.Write(pair.Key);
+
+                for (var f = 0; f < this.factors; f++)
                 {
-                    this.itemFactors.Row(pair.Value, yi);
-
-                    writer.Write(pair.Key);
-
-                    for (var f = 0; f < this.factors; f++)
-                    {
-                        writer.Write(yi[f]);
-                    }
+                    writer.Write(yi[f]);
                 }
             }
         }
 
         private static Vector<double> UserFactor(Matrix<double> Y, Matrix<double> YtY, Dictionary<int, Dictionary<int, double>> Cui, int u, double regularization, int factors)
         {
-            var equation = UserLinearEquation(Y, YtY, Cui, u, regularization, factors);
+            var (a, b) = UserLinearEquation(Y, YtY, Cui, u, regularization, factors);
 
-            return equation.A.Solve(equation.b);
+            return a.Solve(b);
         }
 
-        private static (Matrix<double> A, Vector<double> b) UserLinearEquation(Matrix<double> Y, Matrix<double> YtY, Dictionary<int, Dictionary<int, double>> Cui, int u, double regularization, int factors)
+        private static (Matrix<double> A, Vector<double> B) UserLinearEquation(Matrix<double> Y, Matrix<double> YtY, Dictionary<int, Dictionary<int, double>> Cui, int u, double regularization, int factors)
         {
             var yi = Vector<double>.Build.Dense(factors);
             var A = YtY.Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));

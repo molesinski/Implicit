@@ -1,6 +1,6 @@
 ﻿namespace Implicit
 {
-    public readonly struct DataRow
+    public readonly record struct DataRow
     {
         public DataRow(string userId, string itemId, double confidence)
         {

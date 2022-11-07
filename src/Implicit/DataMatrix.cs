@@ -1,4 +1,6 @@
-﻿using System;
+﻿#pragma warning disable SA1312 // Variable names should begin with lower-case letter
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -29,6 +31,7 @@ namespace Implicit
                 return this.ItemMap.Count;
             }
         }
+
         public double FillFactor
         {
             get
@@ -47,7 +50,7 @@ namespace Implicit
 
         public static DataMatrix Load(Dictionary<string, Dictionary<string, double>> data)
         {
-            if (data == null)
+            if (data is null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
@@ -105,7 +108,7 @@ namespace Implicit
 
         public static DataMatrix Load(IEnumerable<DataRow> data)
         {
-            if (data == null)
+            if (data is null)
             {
                 throw new ArgumentNullException(nameof(data));
             }

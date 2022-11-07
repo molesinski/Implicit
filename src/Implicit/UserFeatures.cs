@@ -13,19 +13,11 @@ namespace Implicit
             this.Vector = vector;
         }
 
-        public double[] Factors
-        {
-            get
-            {
-                return this.Vector.ToArray();
-            }
-        }
-
         internal double Norm
         {
             get
             {
-                if (this.norm == null)
+                if (this.norm is null)
                 {
                     var norm = this.Vector.Norm(2.0);
 

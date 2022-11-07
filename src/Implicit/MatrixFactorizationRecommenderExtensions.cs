@@ -10,12 +10,12 @@ namespace Implicit
             this IMatrixFactorizationRecommender recommender,
             IEnumerable<string> items)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (items == null)
+            if (items is null)
             {
                 throw new ArgumentNullException(nameof(items));
             }
@@ -27,12 +27,12 @@ namespace Implicit
             this IMatrixFactorizationRecommender recommender,
             Dictionary<string, double> items)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (items == null)
+            if (items is null)
             {
                 throw new ArgumentNullException(nameof(items));
             }
@@ -44,12 +44,12 @@ namespace Implicit
             this IMatrixFactorizationRecommender recommender,
             UserFeatures user)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -62,17 +62,17 @@ namespace Implicit
             string userId,
             IEnumerable<KeyValuePair<string, IEnumerable<string>>> userItems)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (userId == null)
+            if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            if (userItems == null)
+            if (userItems is null)
             {
                 throw new ArgumentNullException(nameof(userItems));
             }
@@ -85,17 +85,17 @@ namespace Implicit
             string userId,
             IEnumerable<KeyValuePair<string, Dictionary<string, double>>> userItems)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (userId == null)
+            if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            if (userItems == null)
+            if (userItems is null)
             {
                 throw new ArgumentNullException(nameof(userItems));
             }
@@ -106,19 +106,19 @@ namespace Implicit
         public static RecommenderResult RankUsers(
             this IMatrixFactorizationRecommender recommender,
             string userId,
-            List<KeyValuePair<string, UserFeatures>> users)
+            IEnumerable<KeyValuePair<string, UserFeatures>> users)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (userId == null)
+            if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            if (users == null)
+            if (users is null)
             {
                 throw new ArgumentNullException(nameof(users));
             }
@@ -129,19 +129,19 @@ namespace Implicit
         public static RecommenderResult RankUsers(
             this IMatrixFactorizationRecommender recommender,
             UserFeatures user,
-            List<KeyValuePair<string, UserFeatures>> users)
+            IEnumerable<KeyValuePair<string, UserFeatures>> users)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (users == null)
+            if (users is null)
             {
                 throw new ArgumentNullException(nameof(users));
             }
@@ -153,12 +153,12 @@ namespace Implicit
             this IMatrixFactorizationRecommender recommender,
             IEnumerable<string> items)
         {
-            if (recommender == null)
+            if (recommender is null)
             {
                 throw new ArgumentNullException(nameof(recommender));
             }
 
-            if (items == null)
+            if (items is null)
             {
                 throw new ArgumentNullException(nameof(items));
             }

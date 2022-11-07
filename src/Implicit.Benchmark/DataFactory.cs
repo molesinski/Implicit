@@ -15,7 +15,7 @@ namespace Implicit.Benchmark
 
             while (!file.Exists)
             {
-                if (file.Directory?.Parent == null)
+                if (file.Directory?.Parent is null)
                 {
                     throw new InvalidOperationException($"Unable to find data set file '{fileName}' within parent directory structure.");
                 }

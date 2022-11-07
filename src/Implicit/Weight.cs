@@ -1,4 +1,6 @@
-﻿using System;
+﻿#pragma warning disable SA1313 // Variable names should begin with lower-case letter
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,7 +10,7 @@ namespace Implicit
     {
         public static Dictionary<string, Dictionary<string, double>> TFIDF(Dictionary<string, Dictionary<string, double>> data)
         {
-            if (data == null)
+            if (data is null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
@@ -30,7 +32,7 @@ namespace Implicit
 
         public static IEnumerable<DataRow> TFIDF(IEnumerable<DataRow> data)
         {
-            if (data == null)
+            if (data is null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
@@ -61,7 +63,7 @@ namespace Implicit
 
         public static Dictionary<string, Dictionary<string, double>> BM25(Dictionary<string, Dictionary<string, double>> data, int K1 = 100, double B = 0.5)
         {
-            if (data == null)
+            if (data is null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
@@ -87,7 +89,7 @@ namespace Implicit
 
         public static IEnumerable<DataRow> BM25(IEnumerable<DataRow> data, int K1 = 100, double B = 0.5)
         {
-            if (data == null)
+            if (data is null)
             {
                 throw new ArgumentNullException(nameof(data));
             }

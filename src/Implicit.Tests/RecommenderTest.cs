@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Xunit;
 
@@ -14,9 +15,9 @@ namespace Implicit.Tests
             var data = this.CreateCheckerBoard(n);
             var recommender = this.CreateRecommender(data);
 
-            foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
+            foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString(CultureInfo.InvariantCulture)))
             {
-                var items = recommender.RecommendUser(userId).Keys.Take(25);
+                var items = recommender.RecommendUser(userId).Take(25);
 
                 Assert.Equal(userId, items.Except(data[userId].Keys).First());
             }
@@ -29,13 +30,13 @@ namespace Implicit.Tests
             var data = this.CreateCheckerBoard(n);
             var recommender = this.CreateRecommender(data);
 
-            foreach (var itemId in Enumerable.Range(0, n).Select(o => o.ToString()))
+            foreach (var itemId in Enumerable.Range(0, n).Select(o => o.ToString(CultureInfo.InvariantCulture)))
             {
-                var items = recommender.RecommendItem(itemId).Keys.Take(10);
+                var items = recommender.RecommendItem(itemId).Take(10);
 
                 foreach (var item in items)
                 {
-                    Assert.Equal(int.Parse(item) % 2, int.Parse(itemId) % 2);
+                    Assert.Equal(int.Parse(item, CultureInfo.InvariantCulture) % 2, int.Parse(itemId, CultureInfo.InvariantCulture) % 2);
                 }
             }
         }
@@ -48,7 +49,7 @@ namespace Implicit.Tests
                 .SelectMany(o => Enumerable.Range(0, n), (i, j) => new { i, j })
                 .Where(o => o.i % 2 == o.j % 2)
                 .Where(o => o.i != o.j)
-                .Select(o => new { UserId = o.i.ToString(), ItemId = o.j.ToString(), Confidence = 1.0 })
+                .Select(o => new { UserId = o.i.ToString(CultureInfo.InvariantCulture), ItemId = o.j.ToString(CultureInfo.InvariantCulture), Confidence = 1.0 })
                 .GroupBy(o => o.UserId)
                 .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence));
         }

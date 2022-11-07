@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -24,7 +25,7 @@ namespace Implicit.Tests
             var data = Enumerable.Range(0, 7)
                 .SelectMany(
                     o => Enumerable.Range(0, 6),
-                    (o, p) => new { UserId = o.ToString(), ItemId = p.ToString(), Confidence = matrix[o][p] })
+                    (o, p) => new { UserId = o.ToString(CultureInfo.InvariantCulture), ItemId = p.ToString(CultureInfo.InvariantCulture), Confidence = matrix[o][p] })
                 .Where(o => o.Confidence > 0)
                 .GroupBy(o => o.UserId)
                 .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence * 2));
@@ -58,10 +59,10 @@ namespace Implicit.Tests
 
             var recommender2 = AlternatingLeastSquares.Load(stream);
 
-            foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString()))
+            foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString(CultureInfo.InvariantCulture)))
             {
-                var items1 = recommender1.RecommendUser(userId).Keys;
-                var items2 = recommender2.RecommendUser(userId).Keys;
+                var items1 = recommender1.RecommendUser(userId);
+                var items2 = recommender2.RecommendUser(userId);
 
                 Assert.True(items1.SequenceEqual(items2));
             }
