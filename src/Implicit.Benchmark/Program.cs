@@ -7,7 +7,7 @@ using MathNet.Numerics;
 
 namespace Implicit.Benchmark
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
