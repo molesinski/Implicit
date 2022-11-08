@@ -8,18 +8,16 @@ name: $(major).$(minor).$(patch)
 pool:
   vmImage: windows-latest
 
-trigger:
-  batch: true
-  branches:
-    include:
-    - master
-  paths:
-    include:
-    - src/Implicit
+trigger: none
 
 pr: none
 
 steps:
+- task: UseDotNet@2
+  displayName: 'Use .NET Core SDK'
+  inputs:
+    useGlobalJson: true
+
 - script: |
     dotnet restore "src/Implicit/Implicit.csproj"
     dotnet restore "src/Implicit.Tests/Implicit.Tests.csproj"
