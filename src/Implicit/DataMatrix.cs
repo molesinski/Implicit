@@ -1,9 +1,5 @@
 ﻿#pragma warning disable SA1312 // Variable names should begin with lower-case letter
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Implicit
 {
     public sealed class DataMatrix

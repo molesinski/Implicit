@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Implicit
+﻿namespace Implicit
 {
     public sealed class RecommenderResultBuilderFactory : IResultBuilderFactory<RecommenderResult>
     {

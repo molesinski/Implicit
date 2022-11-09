@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Implicit
+﻿namespace Implicit
 {
     public sealed class AlternatingLeastSquaresIterationCompletedContext
     {

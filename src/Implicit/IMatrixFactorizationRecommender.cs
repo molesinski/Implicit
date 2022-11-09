@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Implicit
+﻿namespace Implicit
 {
     public interface IMatrixFactorizationRecommender : IRecommender
     {

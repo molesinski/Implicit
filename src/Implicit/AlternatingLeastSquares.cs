@@ -1,13 +1,8 @@
 ﻿#pragma warning disable SA1312 // Variable names should begin with lower-case letter
 #pragma warning disable SA1313 // Variable names should begin with lower-case letter
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
 
