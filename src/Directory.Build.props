@@ -19,7 +19,6 @@
     <RepositoryUrl>https://github.com/molesinski/Implicit</RepositoryUrl>
     <PackageProjectUrl>https://github.com/molesinski/Implicit</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
