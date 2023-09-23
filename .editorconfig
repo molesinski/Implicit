@@ -8,10 +8,18 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 tab_width = 4
+spelling_exclusion_path = spelling.dic
 
-[*.{csproj,props,targets,json,config,yaml,yml,xml}]
+[*.{csproj,dcproj,props,targets,json,config,conf,cmd,sh,yaml,yml,xml}]
 indent_size = 2
 tab_width = 2
+
+[*.{cmd,js,json}]
+charset = utf-8
+
+[*.{conf,sh}]
+charset = utf-8
+end_of_line = lf
 
 [global.json]
 charset = latin1
@@ -84,11 +92,12 @@ csharp_style_prefer_not_pattern = true:suggestion
 csharp_style_prefer_null_check_over_type_check = true:suggestion
 csharp_style_prefer_parameter_null_checking = true:suggestion
 csharp_style_prefer_pattern_matching = true:silent
-csharp_style_prefer_range_operator = true:suggestion
+csharp_style_prefer_primary_constructors = false:silent
+csharp_style_prefer_range_operator = false:silent
 csharp_style_prefer_readonly_struct = true:suggestion
 csharp_style_prefer_switch_expression = true:suggestion
 csharp_style_prefer_top_level_statements = false:silent
-csharp_style_prefer_tuple_swap = true:suggestion
+csharp_style_prefer_tuple_swap = false:silent
 csharp_style_prefer_utf8_string_literals = true:suggestion
 csharp_style_throw_expression = false:suggestion
 csharp_style_unused_value_assignment_preference = discard_variable:suggestion
@@ -145,7 +154,7 @@ dotnet_naming_style.pascal_case.required_prefix =
 dotnet_naming_style.pascal_case.required_suffix = 
 dotnet_naming_style.pascal_case.word_separator = 
 dotnet_naming_style.pascal_case.capitalization = pascal_case
-dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_coalesce_expression = true:silent
 dotnet_style_null_propagation = true:suggestion
 dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
 dotnet_style_prefer_auto_properties = true:silent
@@ -155,6 +164,7 @@ dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true:silent
 dotnet_style_prefer_conditional_expression_over_return = true:silent
 dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_prefer_collection_expression = false:silent
 dotnet_style_prefer_inferred_tuple_names = true:silent
 dotnet_style_prefer_inferred_anonymous_type_member_names = true:silent
 dotnet_style_prefer_compound_assignment = true:suggestion
@@ -183,12 +193,6 @@ dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
 # Analyzer rules
-
-dotnet_diagnostic.CA1716.severity = silent
-dotnet_diagnostic.CA1711.severity = silent
-dotnet_diagnostic.CA2225.severity = silent
-
-dotnet_diagnostic.IDE0074.severity = silent
 
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = none
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.LayoutRules.severity = error

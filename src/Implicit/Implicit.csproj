@@ -1,15 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net462;netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup>
+    <TargetFrameworks>net462;netstandard2.0;netstandard2.1;net6.0;net7.0</TargetFrameworks>
+    <RootNamespace>Implicit</RootNamespace>
+    <IsPackable>true</IsPackable>
     <PackageId>Implicit</PackageId>
   </PropertyGroup>
+
+  <Import Project="../../Package.props" />
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
   </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0' or $(TargetFramework) == 'net462'">
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+  </ItemGroup>
+
 
 </Project>

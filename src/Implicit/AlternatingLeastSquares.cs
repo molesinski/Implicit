@@ -258,77 +258,62 @@ namespace Implicit
                     itemFactors);
         }
 
-        public TResult RecommendUser<TResult>(string userId, IResultBuilderFactory<TResult> resultBuilderFactory)
+        public RecommenderResult RecommendUser(string userId)
         {
             if (userId is null)
             {
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            if (resultBuilderFactory is null)
-            {
-                throw new ArgumentNullException(nameof(resultBuilderFactory));
-            }
-
             if (!this.userMap.ContainsKey(userId))
             {
-                return resultBuilderFactory.CreateEmpty();
+                return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
             var user = new UserFeatures(xu);
 
-            return this.RecommendUser(user, resultBuilderFactory);
+            return this.RecommendUser(user);
         }
 
-        public TResult RecommendUser<TResult>(UserFeatures user, IResultBuilderFactory<TResult> resultBuilderFactory)
+        public RecommenderResult RecommendUser(UserFeatures user)
         {
             if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (resultBuilderFactory is null)
-            {
-                throw new ArgumentNullException(nameof(resultBuilderFactory));
-            }
-
             var xu = user.Vector;
             var yi = Vector<double>.Build.Dense(this.factors);
 
-            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
+            var storage = SharedObjectPools.KeyValueLists.Lease();
 
             foreach (var item in this.itemMap)
             {
                 this.itemFactors.Row(item.Value, yi);
 
-                resultBuilder.Append(item.Key, xu.DotProduct(yi));
+                storage.Instance.Add(new KeyValuePair<string, double>(item.Key, xu.DotProduct(yi)));
             }
 
-            return resultBuilder.ToResult();
+            return new RecommenderResult(storage);
         }
 
-        public TResult RecommendItem<TResult>(string itemId, IResultBuilderFactory<TResult> resultBuilderFactory)
+        public RecommenderResult RecommendItem(string itemId)
         {
             if (itemId is null)
             {
                 throw new ArgumentNullException(nameof(itemId));
             }
 
-            if (resultBuilderFactory is null)
-            {
-                throw new ArgumentNullException(nameof(resultBuilderFactory));
-            }
-
             if (!this.itemMap.ContainsKey(itemId))
             {
-                return resultBuilderFactory.CreateEmpty();
+                return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
             }
 
             var yi = this.itemFactors.Row(this.itemMap[itemId]);
             var yj = Vector<double>.Build.Dense(this.factors);
 
-            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: this.itemMap.Count);
+            var storage = SharedObjectPools.KeyValueLists.Lease();
 
             foreach (var item in this.itemMap)
             {
@@ -336,13 +321,13 @@ namespace Implicit
 
                 this.itemFactors.Row(j, yj);
 
-                resultBuilder.Append(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]);
+                storage.Instance.Add(new KeyValuePair<string, double>(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
             }
 
-            return resultBuilder.ToResult();
+            return new RecommenderResult(storage);
         }
 
-        public TResult RankUsers<TResult>(string userId, IEnumerable<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
+        public RecommenderResult RankUsers(string userId, IEnumerable<KeyValuePair<string, UserFeatures>> users)
         {
             if (userId is null)
             {
@@ -354,23 +339,18 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(users));
             }
 
-            if (resultBuilderFactory is null)
-            {
-                throw new ArgumentNullException(nameof(resultBuilderFactory));
-            }
-
             if (!this.userMap.ContainsKey(userId))
             {
-                return resultBuilderFactory.CreateEmpty();
+                return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
             }
 
             var xu = this.userFactors.Row(this.userMap[userId]);
             var user = new UserFeatures(xu);
 
-            return this.RankUsers(user, users, resultBuilderFactory);
+            return this.RankUsers(user, users);
         }
 
-        public TResult RankUsers<TResult>(UserFeatures user, IEnumerable<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory)
+        public RecommenderResult RankUsers(UserFeatures user, IEnumerable<KeyValuePair<string, UserFeatures>> users)
         {
             if (user is null)
             {
@@ -382,14 +362,9 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(users));
             }
 
-            if (resultBuilderFactory is null)
-            {
-                throw new ArgumentNullException(nameof(resultBuilderFactory));
-            }
-
             var xu = user.Vector;
 
-            var resultBuilder = resultBuilderFactory.CreateBuilder(maximumCapacity: users.Count());
+            var storage = SharedObjectPools.KeyValueLists.Lease();
 
             foreach (var pair in users)
             {
@@ -397,10 +372,10 @@ namespace Implicit
                 var norm = pair.Value.Norm;
                 var score = xu.DotProduct(xv) / norm;
 
-                resultBuilder.Append(pair.Key, score);
+                storage.Instance.Add(new KeyValuePair<string, double>(pair.Key, score));
             }
 
-            return resultBuilder.ToResult();
+            return new RecommenderResult(storage);
         }
 
         public UserFeatures? GetUserFeatures(string userId)
@@ -514,8 +489,9 @@ namespace Implicit
             return (A, b);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
+#pragma warning disable IDE0051 // Remove unused private members
         private static void LeastSquares(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+#pragma warning restore IDE0051 // Remove unused private members
         {
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y);
@@ -573,33 +549,21 @@ namespace Implicit
                 _ => { });
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
+#pragma warning disable IDE0051 // Remove unused private members
         private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
+#pragma warning restore IDE0051 // Remove unused private members
         {
             var users = X.RowCount;
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
 
-            Parallel.For(0, users, u =>
-            {
-                var xu = X.Row(u);
-                var r = YtY.Multiply(xu).Multiply(-1);
-
-                foreach (var pair in Cui[u])
+            Parallel.For(
+                0,
+                users,
+                u =>
                 {
-                    var i = pair.Key;
-                    var confidence = pair.Value;
-                    var yi = Y.Row(i);
-
-                    r.Add(yi.Multiply(confidence - ((confidence - 1) * yi.DotProduct(xu))), r);
-                }
-
-                var p = r.Clone();
-                var rsold = r.DotProduct(r);
-
-                for (var iteration = 0; iteration < iterations; iteration++)
-                {
-                    var Ap = YtY.Multiply(p);
+                    var xu = X.Row(u);
+                    var r = YtY.Multiply(xu).Multiply(-1);
 
                     foreach (var pair in Cui[u])
                     {
@@ -607,27 +571,43 @@ namespace Implicit
                         var confidence = pair.Value;
                         var yi = Y.Row(i);
 
-                        Ap.Add(yi.Multiply(yi.DotProduct(p)).Multiply(confidence - 1), Ap);
+                        r.Add(yi.Multiply(confidence - ((confidence - 1) * yi.DotProduct(xu))), r);
                     }
 
-                    var alpha = rsold / p.DotProduct(Ap);
+                    var p = r.Clone();
+                    var rsold = r.DotProduct(r);
 
-                    xu.Add(p.Multiply(alpha), xu);
-                    r.Subtract(Ap.Multiply(alpha), r);
-
-                    var rsnew = r.DotProduct(r);
-
-                    if (rsnew < UserFeatures.Epsilon)
+                    for (var iteration = 0; iteration < iterations; iteration++)
                     {
-                        break;
+                        var Ap = YtY.Multiply(p);
+
+                        foreach (var pair in Cui[u])
+                        {
+                            var i = pair.Key;
+                            var confidence = pair.Value;
+                            var yi = Y.Row(i);
+
+                            Ap.Add(yi.Multiply(yi.DotProduct(p)).Multiply(confidence - 1), Ap);
+                        }
+
+                        var alpha = rsold / p.DotProduct(Ap);
+
+                        xu.Add(p.Multiply(alpha), xu);
+                        r.Subtract(Ap.Multiply(alpha), r);
+
+                        var rsnew = r.DotProduct(r);
+
+                        if (rsnew < UserFeatures.Epsilon)
+                        {
+                            break;
+                        }
+
+                        p = r.Add(p.Multiply(rsnew / rsold));
+                        rsold = rsnew;
                     }
 
-                    p = r.Add(p.Multiply(rsnew / rsold));
-                    rsold = rsnew;
-                }
-
-                X.SetRow(u, xu);
-            });
+                    X.SetRow(u, xu);
+                });
         }
 
         private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
@@ -706,8 +686,9 @@ namespace Implicit
                 _ => { });
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Illustrates less performant, but more readable implementation.")]
+#pragma warning disable IDE0051 // Remove unused private members
         private static double CalculateLoss(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+#pragma warning restore IDE0051 // Remove unused private members
         {
             var nnz = 0;
             var loss = 0.0;

@@ -2,11 +2,11 @@
 {
     public interface IMatrixFactorizationRecommender : IRecommender
     {
-        TResult RecommendUser<TResult>(UserFeatures user, IResultBuilderFactory<TResult> resultBuilderFactory);
+        RecommenderResult RecommendUser(UserFeatures user);
 
-        TResult RankUsers<TResult>(string userId, IEnumerable<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory);
+        RecommenderResult RankUsers(string userId, IEnumerable<KeyValuePair<string, UserFeatures>> users);
 
-        TResult RankUsers<TResult>(UserFeatures user, IEnumerable<KeyValuePair<string, UserFeatures>> users, IResultBuilderFactory<TResult> resultBuilderFactory);
+        RecommenderResult RankUsers(UserFeatures user, IEnumerable<KeyValuePair<string, UserFeatures>> users);
 
         UserFeatures? GetUserFeatures(string userId);
 
