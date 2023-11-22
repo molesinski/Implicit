@@ -20,4 +20,4 @@ All models have multi-threaded training routines, using Parallel execution to fi
 
 ## License
 
-Released under the MIT License
+- Implicit, [MIT License](LICENSE)

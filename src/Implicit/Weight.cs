@@ -57,7 +57,7 @@ namespace Implicit
                     });
         }
 
-        public static Dictionary<string, Dictionary<string, double>> BM25(Dictionary<string, Dictionary<string, double>> data, int K1 = 100, double B = 0.5)
+        public static Dictionary<string, Dictionary<string, double>> BM25(Dictionary<string, Dictionary<string, double>> data, int K1 = 100, double B = 0.8)
         {
             if (data is null)
             {
@@ -83,7 +83,7 @@ namespace Implicit
             return weighted;
         }
 
-        public static IEnumerable<DataRow> BM25(IEnumerable<DataRow> data, int K1 = 100, double B = 0.5)
+        public static IEnumerable<DataRow> BM25(IEnumerable<DataRow> data, int K1 = 100, double B = 0.8)
         {
             if (data is null)
             {

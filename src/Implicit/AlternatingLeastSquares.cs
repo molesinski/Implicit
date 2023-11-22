@@ -265,12 +265,12 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            if (!this.userMap.ContainsKey(userId))
+            if (!this.userMap.TryGetValue(userId, out var u))
             {
                 return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
             }
 
-            var xu = this.userFactors.Row(this.userMap[userId]);
+            var xu = this.userFactors.Row(u);
             var user = new UserFeatures(xu);
 
             return this.RecommendUser(user);
@@ -305,12 +305,12 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(itemId));
             }
 
-            if (!this.itemMap.ContainsKey(itemId))
+            if (!this.itemMap.TryGetValue(itemId, out var i))
             {
                 return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
             }
 
-            var yi = this.itemFactors.Row(this.itemMap[itemId]);
+            var yi = this.itemFactors.Row(i);
             var yj = Vector<double>.Build.Dense(this.factors);
 
             var storage = SharedObjectPools.KeyValueLists.Lease();
@@ -339,12 +339,12 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(users));
             }
 
-            if (!this.userMap.ContainsKey(userId))
+            if (!this.userMap.TryGetValue(userId, out var u))
             {
                 return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
             }
 
-            var xu = this.userFactors.Row(this.userMap[userId]);
+            var xu = this.userFactors.Row(u);
             var user = new UserFeatures(xu);
 
             return this.RankUsers(user, users);
@@ -385,12 +385,12 @@ namespace Implicit
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            if (!this.userMap.ContainsKey(userId))
+            if (!this.userMap.TryGetValue(userId, out var u))
             {
                 return null;
             }
 
-            var xu = this.userFactors.Row(this.userMap[userId]);
+            var xu = this.userFactors.Row(u);
             var user = new UserFeatures(xu);
 
             return user;
