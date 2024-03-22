@@ -10,6 +10,8 @@ namespace Implicit
 {
     public sealed class AlternatingLeastSquares : IRecommender, IMatrixFactorizationRecommender
     {
+        private const int ConjugateGradientSteps = 3;
+
         private readonly int factors;
         private readonly double regularization;
         private readonly double loss;
@@ -160,22 +162,26 @@ namespace Implicit
 
             for (var iteration = 0; iteration < parameters.Iterations; iteration++)
             {
+                parameters.ParallelOptions.CancellationToken.ThrowIfCancellationRequested();
+
                 var stopwatch = Stopwatch.StartNew();
 
                 if (parameters.UseConjugateGradient)
                 {
-                    LeastSquaresConjugateGradientFast(Cui, userFactors, itemFactors, parameters.Regularization);
-                    LeastSquaresConjugateGradientFast(Ciu, itemFactors, userFactors, parameters.Regularization);
+                    LeastSquaresConjugateGradientFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
+                    LeastSquaresConjugateGradientFast(Ciu, itemFactors, userFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
                 else
                 {
-                    LeastSquaresFast(Cui, userFactors, itemFactors, parameters.Regularization);
-                    LeastSquaresFast(Ciu, itemFactors, userFactors, parameters.Regularization);
+                    LeastSquaresFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
+                    LeastSquaresFast(Ciu, itemFactors, userFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
 
                 if (parameters.CalculateLossAtIteration)
                 {
-                    loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization);
+                    parameters.ParallelOptions.CancellationToken.ThrowIfCancellationRequested();
+
+                    loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
 
                 parameters.IterationCompleted(iteration, loss, stopwatch.Elapsed);
@@ -183,7 +189,9 @@ namespace Implicit
 
             if (!parameters.CalculateLossAtIteration)
             {
-                loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization);
+                parameters.ParallelOptions.CancellationToken.ThrowIfCancellationRequested();
+
+                loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
             }
 
             return
@@ -490,7 +498,7 @@ namespace Implicit
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static void LeastSquares(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static void LeastSquares(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             var factors = X.ColumnCount;
@@ -499,13 +507,14 @@ namespace Implicit
             Parallel.For(
                 0,
                 X.RowCount,
+                parallelOptions,
                 u =>
                 {
                     X.SetRow(u, UserFactor(Y, YtY, Cui, u, regularization, factors));
                 });
         }
 
-        private static void LeastSquaresFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static void LeastSquaresFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
         {
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
@@ -513,6 +522,7 @@ namespace Implicit
             Parallel.For(
                 0,
                 X.RowCount,
+                parallelOptions,
                 () => new
                 {
                     xu = Vector<double>.Build.Dense(factors),
@@ -550,7 +560,7 @@ namespace Implicit
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
+        private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             var users = X.RowCount;
@@ -560,6 +570,7 @@ namespace Implicit
             Parallel.For(
                 0,
                 users,
+                parallelOptions,
                 u =>
                 {
                     var xu = X.Row(u);
@@ -577,7 +588,7 @@ namespace Implicit
                     var p = r.Clone();
                     var rsold = r.DotProduct(r);
 
-                    for (var iteration = 0; iteration < iterations; iteration++)
+                    for (var step = 0; step < ConjugateGradientSteps; step++)
                     {
                         var Ap = YtY.Multiply(p);
 
@@ -610,7 +621,7 @@ namespace Implicit
                 });
         }
 
-        private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, int iterations = 3)
+        private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
         {
             var factors = X.ColumnCount;
             var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
@@ -618,6 +629,7 @@ namespace Implicit
             Parallel.For(
                 0,
                 X.RowCount,
+                parallelOptions,
                 () => new
                 {
                     xu = Vector<double>.Build.Dense(factors),
@@ -647,7 +659,7 @@ namespace Implicit
 
                     var rsold = s.r.DotProduct(s.r);
 
-                    for (var iteration = 0; iteration < iterations; iteration++)
+                    for (var step = 0; step < ConjugateGradientSteps; step++)
                     {
                         YtY.Multiply(s.p, s.Ap);
 
@@ -738,7 +750,7 @@ namespace Implicit
             return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
         }
 
-        private static double CalculateLossFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static double CalculateLossFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
         {
             var mutex = new object();
             var factors = X.ColumnCount;
@@ -753,6 +765,7 @@ namespace Implicit
             Parallel.For(
                 0,
                 X.RowCount,
+                parallelOptions,
                 () => new
                 {
                     xu = Vector<double>.Build.Dense(factors),
@@ -804,6 +817,7 @@ namespace Implicit
             Parallel.For(
                 0,
                 Y.RowCount,
+                parallelOptions,
                 () => new
                 {
                     yi = Vector<double>.Build.Dense(factors),

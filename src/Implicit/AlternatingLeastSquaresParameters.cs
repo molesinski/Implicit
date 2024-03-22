@@ -7,13 +7,15 @@
             double regularization = 0.01,
             int iterations = 10,
             bool useConjugateGradient = true,
-            bool calculateLossAtIteration = false)
+            bool calculateLossAtIteration = false,
+            ParallelOptions? parallelOptions = null)
         {
             this.Factors = factors;
             this.Regularization = regularization;
             this.Iterations = iterations;
             this.UseConjugateGradient = useConjugateGradient;
             this.CalculateLossAtIteration = calculateLossAtIteration;
+            this.ParallelOptions = parallelOptions ?? new ParallelOptions();
         }
 
         public int Factors { get; }
@@ -25,6 +27,8 @@
         public bool UseConjugateGradient { get; }
 
         public bool CalculateLossAtIteration { get; }
+
+        public ParallelOptions ParallelOptions { get; }
 
         public Action<AlternatingLeastSquaresIterationCompletedContext>? OnIterationCompleted { get; set; }
 
