@@ -16,7 +16,14 @@
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender.RecommendUser(recommender.ComputeUserFactors(items));
+            var features = recommender.ComputeUserFeatures(items);
+
+            if (features is null)
+            {
+                return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
+            }
+
+            return recommender.RecommendUser(features);
         }
 
         public static RecommenderResult RecommendUser(
@@ -33,7 +40,14 @@
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender.RecommendUser(recommender.ComputeUserFeatures(items));
+            var features = recommender.ComputeUserFeatures(items);
+
+            if (features is null)
+            {
+                return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
+            }
+
+            return recommender.RecommendUser(features);
         }
 
         public static RecommenderResult RankUsers(
@@ -56,7 +70,25 @@
                 throw new ArgumentNullException(nameof(userItems));
             }
 
-            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, UserFeatures>(o.Key, recommender.ComputeUserFactors(o.Value))).ToList());
+            var users = default(List<KeyValuePair<string, UserFeatures>>);
+
+            foreach (var user in userItems)
+            {
+                var userFeatures = recommender.ComputeUserFeatures(user.Value);
+
+                if (userFeatures is not null)
+                {
+                    users ??= new List<KeyValuePair<string, UserFeatures>>();
+                    users.Add(new KeyValuePair<string, UserFeatures>(user.Key, userFeatures));
+                }
+            }
+
+            if (users is null)
+            {
+                return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
+            }
+
+            return recommender.RankUsers(userId, users);
         }
 
         public static RecommenderResult RankUsers(
@@ -79,10 +111,28 @@
                 throw new ArgumentNullException(nameof(userItems));
             }
 
-            return recommender.RankUsers(userId, userItems.Select(o => new KeyValuePair<string, UserFeatures>(o.Key, recommender.ComputeUserFeatures(o.Value))).ToList());
+            var users = default(List<KeyValuePair<string, UserFeatures>>);
+
+            foreach (var user in userItems)
+            {
+                var userFeatures = recommender.ComputeUserFeatures(user.Value);
+
+                if (userFeatures is not null)
+                {
+                    users ??= new List<KeyValuePair<string, UserFeatures>>();
+                    users.Add(new KeyValuePair<string, UserFeatures>(user.Key, userFeatures));
+                }
+            }
+
+            if (users is null)
+            {
+                return new RecommenderResult(SharedObjectPools.KeyValueLists.Lease());
+            }
+
+            return recommender.RankUsers(userId, users);
         }
 
-        public static UserFeatures ComputeUserFactors(
+        public static UserFeatures? ComputeUserFeatures(
             this IMatrixFactorizationRecommender recommender,
             IEnumerable<string> items)
         {

@@ -13,6 +13,17 @@ namespace Implicit
             this.Vector = vector;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "By design")]
+        public double[] Factors
+        {
+            get
+            {
+                return this.Vector.ToArray();
+            }
+        }
+
+        internal Vector<double> Vector { get; }
+
         internal double Norm
         {
             get
@@ -32,7 +43,5 @@ namespace Implicit
                 return this.norm.Value;
             }
         }
-
-        internal Vector<double> Vector { get; }
     }
 }

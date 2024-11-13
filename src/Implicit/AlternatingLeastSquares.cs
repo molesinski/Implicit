@@ -64,6 +64,22 @@ namespace Implicit
             }
         }
 
+        public IReadOnlyCollection<string> Users
+        {
+            get
+            {
+                return this.userMap.Keys;
+            }
+        }
+
+        public IReadOnlyCollection<string> Items
+        {
+            get
+            {
+                return this.itemMap.Keys;
+            }
+        }
+
         public Dictionary<string, double[]> UserFactors
         {
             get
@@ -404,21 +420,27 @@ namespace Implicit
             return user;
         }
 
-        public UserFeatures ComputeUserFeatures(Dictionary<string, double> items)
+        public UserFeatures? ComputeUserFeatures(Dictionary<string, double> items)
         {
             if (items is null)
             {
                 throw new ArgumentNullException(nameof(items));
             }
 
-            var userItems = new Dictionary<int, double>(items.Count);
+            var userItems = default(Dictionary<int, double>);
 
             foreach (var item in items)
             {
                 if (this.itemMap.TryGetValue(item.Key, out var i))
                 {
+                    userItems ??= new Dictionary<int, double>(items.Count);
                     userItems.Add(i, item.Value);
                 }
+            }
+
+            if (userItems is null)
+            {
+                return null;
             }
 
             var u = 0;
