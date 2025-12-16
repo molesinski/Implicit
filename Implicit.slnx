@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/.Solution/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path=".globalconfig" />
+    <File Path="azure-pipelines.yml" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="Package.props" />
+    <File Path="README.md" />
+    <File Path="spelling.dic" />
+  </Folder>
+  <Project Path="src/Implicit.Benchmark/Implicit.Benchmark.csproj" />
+  <Project Path="src/Implicit.Tests/Implicit.Tests.csproj" />
+  <Project Path="src/Implicit/Implicit.csproj" />
+  <Properties Name="Performance">
+    <Property Name="HasPerformanceSessions" Value="true" />
+  </Properties>
+</Solution>
