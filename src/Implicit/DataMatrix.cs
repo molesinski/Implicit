@@ -1,10 +1,12 @@
-﻿#pragma warning disable SA1312 // Variable names should begin with lower-case letter
-
-namespace Implicit
+﻿namespace Implicit
 {
     public sealed class DataMatrix
     {
-        private DataMatrix(Dictionary<string, int> userMap, Dictionary<string, int> itemMap, Dictionary<int, Dictionary<int, double>> cui, Dictionary<int, Dictionary<int, double>> ciu)
+        private DataMatrix(
+            Dictionary<string, int> userMap,
+            Dictionary<string, int> itemMap,
+            Dictionary<int, Dictionary<int, double>> cui,
+            Dictionary<int, Dictionary<int, double>> ciu)
         {
             this.UserMap = userMap;
             this.ItemMap = itemMap;
@@ -32,7 +34,7 @@ namespace Implicit
         {
             get
             {
-                return 1.0 * this.Cui.Values.Sum(o => o.Values.Count) / (this.UserMap.Count * this.ItemMap.Count);
+                return 1.0 * this.Cui.Values.Sum(x => x.Values.Count) / (this.UserMap.Count * this.ItemMap.Count);
             }
         }
 
@@ -53,8 +55,8 @@ namespace Implicit
 
             var userMap = new Dictionary<string, int>();
             var itemMap = new Dictionary<string, int>();
-            var Cui = new Dictionary<int, Dictionary<int, double>>();
-            var Ciu = new Dictionary<int, Dictionary<int, double>>();
+            var cui = new Dictionary<int, Dictionary<int, double>>();
+            var ciu = new Dictionary<int, Dictionary<int, double>>();
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
@@ -76,14 +78,14 @@ namespace Implicit
                         itemMap.Add(itemId, i = nextItemIndex++);
                     }
 
-                    if (!Cui.TryGetValue(u, out var user))
+                    if (!cui.TryGetValue(u, out var user))
                     {
-                        Cui.Add(u, user = new Dictionary<int, double>());
+                        cui.Add(u, user = new Dictionary<int, double>());
                     }
 
-                    if (!Ciu.TryGetValue(i, out var item))
+                    if (!ciu.TryGetValue(i, out var item))
                     {
-                        Ciu.Add(i, item = new Dictionary<int, double>());
+                        ciu.Add(i, item = new Dictionary<int, double>());
                     }
 
                     user.TryGetValue(i, out var userConfidence);
@@ -98,8 +100,8 @@ namespace Implicit
                 new DataMatrix(
                     userMap,
                     itemMap,
-                    Cui,
-                    Ciu);
+                    cui,
+                    ciu);
         }
 
         public static DataMatrix Load(IEnumerable<DataRow> data)
@@ -111,8 +113,8 @@ namespace Implicit
 
             var userMap = new Dictionary<string, int>();
             var itemMap = new Dictionary<string, int>();
-            var Cui = new Dictionary<int, Dictionary<int, double>>();
-            var Ciu = new Dictionary<int, Dictionary<int, double>>();
+            var cui = new Dictionary<int, Dictionary<int, double>>();
+            var ciu = new Dictionary<int, Dictionary<int, double>>();
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
@@ -132,14 +134,14 @@ namespace Implicit
                     itemMap.Add(itemId, i = nextItemIndex++);
                 }
 
-                if (!Cui.TryGetValue(u, out var user))
+                if (!cui.TryGetValue(u, out var user))
                 {
-                    Cui.Add(u, user = new Dictionary<int, double>());
+                    cui.Add(u, user = new Dictionary<int, double>());
                 }
 
-                if (!Ciu.TryGetValue(i, out var item))
+                if (!ciu.TryGetValue(i, out var item))
                 {
-                    Ciu.Add(i, item = new Dictionary<int, double>());
+                    ciu.Add(i, item = new Dictionary<int, double>());
                 }
 
                 user.TryGetValue(i, out var userConfidence);
@@ -153,8 +155,8 @@ namespace Implicit
                 new DataMatrix(
                     userMap,
                     itemMap,
-                    Cui,
-                    Ciu);
+                    cui,
+                    ciu);
         }
     }
 }

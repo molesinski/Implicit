@@ -146,7 +146,7 @@
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender.ComputeUserFeatures(items.ToDictionary(o => o, o => 1.0));
+            return recommender.ComputeUserFeatures(items.ToDictionary(x => x, x => 1.0));
         }
     }
 }

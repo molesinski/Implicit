@@ -2,7 +2,10 @@
 {
     public readonly record struct DataRow
     {
-        public DataRow(string userId, string itemId, double confidence)
+        public DataRow(
+            string userId,
+            string itemId,
+            double confidence)
         {
             this.UserId = userId;
             this.ItemId = itemId;

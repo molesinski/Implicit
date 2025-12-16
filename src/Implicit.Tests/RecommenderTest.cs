@@ -13,7 +13,7 @@ namespace Implicit.Tests
             var data = this.CreateCheckerBoard(n);
             var recommender = this.CreateRecommender(data);
 
-            foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString(CultureInfo.InvariantCulture)))
+            foreach (var userId in Enumerable.Range(0, n).Select(x => x.ToString(CultureInfo.InvariantCulture)))
             {
                 var items = recommender.RecommendUser(userId).Take(25);
 
@@ -28,7 +28,7 @@ namespace Implicit.Tests
             var data = this.CreateCheckerBoard(n);
             var recommender = this.CreateRecommender(data);
 
-            foreach (var itemId in Enumerable.Range(0, n).Select(o => o.ToString(CultureInfo.InvariantCulture)))
+            foreach (var itemId in Enumerable.Range(0, n).Select(x => x.ToString(CultureInfo.InvariantCulture)))
             {
                 var items = recommender.RecommendItem(itemId).Take(10);
 
@@ -44,12 +44,12 @@ namespace Implicit.Tests
         protected Dictionary<string, Dictionary<string, double>> CreateCheckerBoard(int n)
         {
             return Enumerable.Range(0, n)
-                .SelectMany(o => Enumerable.Range(0, n), (i, j) => new { i, j })
-                .Where(o => o.i % 2 == o.j % 2)
-                .Where(o => o.i != o.j)
-                .Select(o => new { UserId = o.i.ToString(CultureInfo.InvariantCulture), ItemId = o.j.ToString(CultureInfo.InvariantCulture), Confidence = 1.0 })
-                .GroupBy(o => o.UserId)
-                .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence));
+                .SelectMany(x => Enumerable.Range(0, n), (i, j) => new { i, j })
+                .Where(x => x.i % 2 == x.j % 2)
+                .Where(x => x.i != x.j)
+                .Select(x => new { UserId = x.i.ToString(CultureInfo.InvariantCulture), ItemId = x.j.ToString(CultureInfo.InvariantCulture), Confidence = 1.0 })
+                .GroupBy(x => x.UserId)
+                .ToDictionary(x => x.Key, x => x.ToDictionary(x => x.ItemId, x => x.Confidence));
         }
     }
 }

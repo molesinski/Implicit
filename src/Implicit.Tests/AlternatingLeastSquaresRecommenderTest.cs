@@ -21,11 +21,11 @@ namespace Implicit.Tests
 
             var data = Enumerable.Range(0, 7)
                 .SelectMany(
-                    o => Enumerable.Range(0, 6),
-                    (o, p) => new { UserId = o.ToString(CultureInfo.InvariantCulture), ItemId = p.ToString(CultureInfo.InvariantCulture), Confidence = matrix[o][p] })
-                .Where(o => o.Confidence > 0)
-                .GroupBy(o => o.UserId)
-                .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence * 2));
+                    x => Enumerable.Range(0, 6),
+                    (x, y) => new { UserId = x.ToString(CultureInfo.InvariantCulture), ItemId = y.ToString(CultureInfo.InvariantCulture), Confidence = matrix[x][y] })
+                .Where(x => x.Confidence > 0)
+                .GroupBy(x => x.UserId)
+                .ToDictionary(x => x.Key, x => x.ToDictionary(p => p.ItemId, p => p.Confidence * 2));
 
             var parametersScenarios = new[]
             {
@@ -56,7 +56,7 @@ namespace Implicit.Tests
 
             var recommender2 = AlternatingLeastSquares.Load(stream);
 
-            foreach (var userId in Enumerable.Range(0, n).Select(o => o.ToString(CultureInfo.InvariantCulture)))
+            foreach (var userId in Enumerable.Range(0, n).Select(x => x.ToString(CultureInfo.InvariantCulture)))
             {
                 var items1 = recommender1.RecommendUser(userId);
                 var items2 = recommender2.RecommendUser(userId);

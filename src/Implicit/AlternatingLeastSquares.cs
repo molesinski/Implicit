@@ -1,7 +1,4 @@
-﻿#pragma warning disable SA1312 // Variable names should begin with lower-case letter
-#pragma warning disable SA1313 // Variable names should begin with lower-case letter
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
@@ -88,10 +85,10 @@ namespace Implicit
 
                 return this.userMap
                     .ToDictionary(
-                        o => o.Key,
-                        o =>
+                        x => x.Key,
+                        x =>
                         {
-                            this.userFactors.Row(o.Value, xu);
+                            this.userFactors.Row(x.Value, xu);
 
                             return xu.ToArray();
                         });
@@ -106,10 +103,10 @@ namespace Implicit
 
                 return this.itemMap
                     .ToDictionary(
-                        o => o.Key,
-                        o =>
+                        x => x.Key,
+                        x =>
                         {
-                            this.itemFactors.Row(o.Value, yi);
+                            this.itemFactors.Row(x.Value, yi);
 
                             return yi.ToArray();
                         });
@@ -145,10 +142,10 @@ namespace Implicit
             {
                 if (this.yty is null)
                 {
-                    var Y = this.itemFactors;
-                    var YtY = Y.TransposeThisAndMultiply(Y);
+                    var y = this.itemFactors;
+                    var yty = y.TransposeThisAndMultiply(y);
 
-                    this.yty = YtY;
+                    this.yty = yty;
                 }
 
                 return this.yty;
@@ -169,8 +166,8 @@ namespace Implicit
 
             var userMap = data.UserMap;
             var itemMap = data.ItemMap;
-            var Cui = data.Cui;
-            var Ciu = data.Ciu;
+            var cui = data.Cui;
+            var ciu = data.Ciu;
 
             var loss = 0.0;
             var userFactors = Matrix<double>.Build.Random(userMap.Count, parameters.Factors, new ContinuousUniform(0, 0.01));
@@ -184,20 +181,20 @@ namespace Implicit
 
                 if (parameters.UseConjugateGradient)
                 {
-                    LeastSquaresConjugateGradientFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
-                    LeastSquaresConjugateGradientFast(Ciu, itemFactors, userFactors, parameters.Regularization, parameters.ParallelOptions);
+                    LeastSquaresConjugateGradientFast(cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
+                    LeastSquaresConjugateGradientFast(ciu, itemFactors, userFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
                 else
                 {
-                    LeastSquaresFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
-                    LeastSquaresFast(Ciu, itemFactors, userFactors, parameters.Regularization, parameters.ParallelOptions);
+                    LeastSquaresFast(cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
+                    LeastSquaresFast(ciu, itemFactors, userFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
 
                 if (parameters.CalculateLossAtIteration)
                 {
                     parameters.ParallelOptions.CancellationToken.ThrowIfCancellationRequested();
 
-                    loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
+                    loss = CalculateLossFast(cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
 
                 parameters.IterationCompleted(iteration, loss, stopwatch.Elapsed);
@@ -207,7 +204,7 @@ namespace Implicit
             {
                 parameters.ParallelOptions.CancellationToken.ThrowIfCancellationRequested();
 
-                loss = CalculateLossFast(Cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
+                loss = CalculateLossFast(cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
             }
 
             return
@@ -444,8 +441,8 @@ namespace Implicit
             }
 
             var u = 0;
-            var Cui = new Dictionary<int, Dictionary<int, double>>(1) { [u] = userItems };
-            var xu = AlternatingLeastSquares.UserFactor(this.itemFactors, this.YtY, Cui, u, this.regularization, this.factors);
+            var cui = new Dictionary<int, Dictionary<int, double>>(1) { [u] = userItems };
+            var xu = AlternatingLeastSquares.UserFactor(this.itemFactors, this.YtY, cui, u, this.regularization, this.factors);
 
             return new UserFeatures(xu);
         }
@@ -493,57 +490,57 @@ namespace Implicit
             }
         }
 
-        private static Vector<double> UserFactor(Matrix<double> Y, Matrix<double> YtY, Dictionary<int, Dictionary<int, double>> Cui, int u, double regularization, int factors)
+        private static Vector<double> UserFactor(Matrix<double> y, Matrix<double> yty, Dictionary<int, Dictionary<int, double>> cui, int u, double regularization, int factors)
         {
-            var (a, b) = UserLinearEquation(Y, YtY, Cui, u, regularization, factors);
+            var (a, b) = UserLinearEquation(y, yty, cui, u, regularization, factors);
 
             return a.Solve(b);
         }
 
-        private static (Matrix<double> A, Vector<double> B) UserLinearEquation(Matrix<double> Y, Matrix<double> YtY, Dictionary<int, Dictionary<int, double>> Cui, int u, double regularization, int factors)
+        private static (Matrix<double> A, Vector<double> B) UserLinearEquation(Matrix<double> y, Matrix<double> yty, Dictionary<int, Dictionary<int, double>> cui, int u, double regularization, int factors)
         {
             var yi = Vector<double>.Build.Dense(factors);
-            var A = YtY.Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var a = yty.Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
             var b = Vector<double>.Build.Dense(factors);
 
-            foreach (var pair in Cui[u])
+            foreach (var pair in cui[u])
             {
                 var i = pair.Key;
                 var confidence = pair.Value;
-                Y.Row(i, yi);
+                y.Row(i, yi);
 
-                A.Add(yi.OuterProduct(yi).Multiply(confidence - 1), A);
+                a.Add(yi.OuterProduct(yi).Multiply(confidence - 1), a);
                 b.Add(yi.Multiply(confidence), b);
             }
 
-            return (A, b);
+            return (a, b);
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static void LeastSquares(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquares(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
 #pragma warning restore IDE0051 // Remove unused private members
         {
-            var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y);
+            var factors = x.ColumnCount;
+            var yty = y.TransposeThisAndMultiply(y);
 
             Parallel.For(
                 0,
-                X.RowCount,
+                x.RowCount,
                 parallelOptions,
                 u =>
                 {
-                    X.SetRow(u, UserFactor(Y, YtY, Cui, u, regularization, factors));
+                    x.SetRow(u, UserFactor(y, yty, cui, u, regularization, factors));
                 });
         }
 
-        private static void LeastSquaresFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquaresFast(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
         {
-            var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var factors = x.ColumnCount;
+            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
-                X.RowCount,
+                x.RowCount,
                 parallelOptions,
                 () => new
                 {
@@ -555,14 +552,14 @@ namespace Implicit
                 },
                 (u, _, s) =>
                 {
-                    YtY.CopyTo(s.A);
+                    yty.CopyTo(s.A);
                     s.b.Clear();
 
-                    foreach (var pair in Cui[u])
+                    foreach (var pair in cui[u])
                     {
                         var i = pair.Key;
                         var confidence = pair.Value;
-                        Y.Row(i, s.yi);
+                        y.Row(i, s.yi);
 
                         s.yi.OuterProduct(s.yi, s.op);
                         s.op.Multiply(confidence - 1, s.op);
@@ -574,7 +571,7 @@ namespace Implicit
 
                     s.A.Solve(s.b, s.xu);
 
-                    X.SetRow(u, s.xu);
+                    x.SetRow(u, s.xu);
 
                     return s;
                 },
@@ -582,12 +579,12 @@ namespace Implicit
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
 #pragma warning restore IDE0051 // Remove unused private members
         {
-            var users = X.RowCount;
-            var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var users = x.RowCount;
+            var factors = x.ColumnCount;
+            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
@@ -595,14 +592,14 @@ namespace Implicit
                 parallelOptions,
                 u =>
                 {
-                    var xu = X.Row(u);
-                    var r = YtY.Multiply(xu).Multiply(-1);
+                    var xu = x.Row(u);
+                    var r = yty.Multiply(xu).Multiply(-1);
 
-                    foreach (var pair in Cui[u])
+                    foreach (var pair in cui[u])
                     {
                         var i = pair.Key;
                         var confidence = pair.Value;
-                        var yi = Y.Row(i);
+                        var yi = y.Row(i);
 
                         r.Add(yi.Multiply(confidence - ((confidence - 1) * yi.DotProduct(xu))), r);
                     }
@@ -612,21 +609,21 @@ namespace Implicit
 
                     for (var step = 0; step < ConjugateGradientSteps; step++)
                     {
-                        var Ap = YtY.Multiply(p);
+                        var ap = yty.Multiply(p);
 
-                        foreach (var pair in Cui[u])
+                        foreach (var pair in cui[u])
                         {
                             var i = pair.Key;
                             var confidence = pair.Value;
-                            var yi = Y.Row(i);
+                            var yi = y.Row(i);
 
-                            Ap.Add(yi.Multiply(yi.DotProduct(p)).Multiply(confidence - 1), Ap);
+                            ap.Add(yi.Multiply(yi.DotProduct(p)).Multiply(confidence - 1), ap);
                         }
 
-                        var alpha = rsold / p.DotProduct(Ap);
+                        var alpha = rsold / p.DotProduct(ap);
 
                         xu.Add(p.Multiply(alpha), xu);
-                        r.Subtract(Ap.Multiply(alpha), r);
+                        r.Subtract(ap.Multiply(alpha), r);
 
                         var rsnew = r.DotProduct(r);
 
@@ -639,18 +636,18 @@ namespace Implicit
                         rsold = rsnew;
                     }
 
-                    X.SetRow(u, xu);
+                    x.SetRow(u, xu);
                 });
         }
 
-        private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
         {
-            var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var factors = x.ColumnCount;
+            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
-                X.RowCount,
+                x.RowCount,
                 parallelOptions,
                 () => new
                 {
@@ -663,15 +660,15 @@ namespace Implicit
                 },
                 (u, _, s) =>
                 {
-                    X.Row(u, s.xu);
-                    YtY.Multiply(s.xu, s.r);
+                    x.Row(u, s.xu);
+                    yty.Multiply(s.xu, s.r);
                     s.r.Multiply(-1, s.r);
 
-                    foreach (var pair in Cui[u])
+                    foreach (var pair in cui[u])
                     {
                         var i = pair.Key;
                         var confidence = pair.Value;
-                        Y.Row(i, s.yi);
+                        y.Row(i, s.yi);
 
                         s.yi.Multiply(confidence - ((confidence - 1) * s.yi.DotProduct(s.xu)), s.yi);
                         s.r.Add(s.yi, s.r);
@@ -683,13 +680,13 @@ namespace Implicit
 
                     for (var step = 0; step < ConjugateGradientSteps; step++)
                     {
-                        YtY.Multiply(s.p, s.Ap);
+                        yty.Multiply(s.p, s.Ap);
 
-                        foreach (var pair in Cui[u])
+                        foreach (var pair in cui[u])
                         {
                             var i = pair.Key;
                             var confidence = pair.Value;
-                            Y.Row(i, s.yi);
+                            y.Row(i, s.yi);
 
                             s.yi.Multiply((confidence - 1) * s.yi.DotProduct(s.p), s.yi);
                             s.Ap.Add(s.yi, s.Ap);
@@ -714,14 +711,14 @@ namespace Implicit
                         rsold = rsnew;
                     }
 
-                    X.SetRow(u, s.xu);
+                    x.SetRow(u, s.xu);
                     return s;
                 },
                 _ => { });
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static double CalculateLoss(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization)
+        private static double CalculateLoss(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             var nnz = 0;
@@ -730,22 +727,22 @@ namespace Implicit
             var item_norm = 0.0;
             var user_norm = 0.0;
 
-            var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y);
+            var factors = x.ColumnCount;
+            var yty = y.TransposeThisAndMultiply(y);
             var xu = Vector<double>.Build.Dense(factors);
             var yi = Vector<double>.Build.Dense(factors);
             var r = Vector<double>.Build.Dense(factors);
 
-            for (var u = 0; u < X.RowCount; u++)
+            for (var u = 0; u < x.RowCount; u++)
             {
-                X.Row(u, xu);
-                YtY.Multiply(xu, r);
+                x.Row(u, xu);
+                yty.Multiply(xu, r);
 
-                foreach (var pair in Cui[u])
+                foreach (var pair in cui[u])
                 {
                     var i = pair.Key;
                     var confidence = pair.Value;
-                    Y.Row(i, yi);
+                    y.Row(i, yi);
 
                     var temp = ((confidence - 1) * yi.DotProduct(xu)) - (2 * confidence);
 
@@ -760,23 +757,23 @@ namespace Implicit
                 user_norm += xu.DotProduct(xu);
             }
 
-            for (var i = 0; i < Y.RowCount; i++)
+            for (var i = 0; i < y.RowCount; i++)
             {
-                Y.Row(i, yi);
+                y.Row(i, yi);
 
                 item_norm += yi.DotProduct(yi);
             }
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
+            return loss / (total_confidence + (y.RowCount * x.RowCount) - nnz);
         }
 
-        private static double CalculateLossFast(Dictionary<int, Dictionary<int, double>> Cui, Matrix<double> X, Matrix<double> Y, double regularization, ParallelOptions parallelOptions)
+        private static double CalculateLossFast(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
         {
             var mutex = new object();
-            var factors = X.ColumnCount;
-            var YtY = Y.TransposeThisAndMultiply(Y);
+            var factors = x.ColumnCount;
+            var yty = y.TransposeThisAndMultiply(y);
 
             var nnz = 0;
             var loss = 0.0;
@@ -786,7 +783,7 @@ namespace Implicit
 
             Parallel.For(
                 0,
-                X.RowCount,
+                x.RowCount,
                 parallelOptions,
                 () => new
                 {
@@ -800,15 +797,15 @@ namespace Implicit
                 },
                 (u, _, s) =>
                 {
-                    X.Row(u, s.xu);
+                    x.Row(u, s.xu);
 
-                    YtY.Multiply(s.xu, s.r);
+                    yty.Multiply(s.xu, s.r);
 
-                    foreach (var pair in Cui[u])
+                    foreach (var pair in cui[u])
                     {
                         var i = pair.Key;
                         var confidence = pair.Value;
-                        Y.Row(i, s.yi);
+                        y.Row(i, s.yi);
 
                         var temp = ((confidence - 1) * s.yi.DotProduct(s.xu)) - (2 * confidence);
 
@@ -838,7 +835,7 @@ namespace Implicit
 
             Parallel.For(
                 0,
-                Y.RowCount,
+                y.RowCount,
                 parallelOptions,
                 () => new
                 {
@@ -847,7 +844,7 @@ namespace Implicit
                 },
                 (i, _, s) =>
                 {
-                    Y.Row(i, s.yi);
+                    y.Row(i, s.yi);
 
                     s.item_norm[0] += s.yi.DotProduct(s.yi);
 
@@ -863,7 +860,7 @@ namespace Implicit
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + (Y.RowCount * X.RowCount) - nnz);
+            return loss / (total_confidence + (y.RowCount * x.RowCount) - nnz);
         }
     }
 }

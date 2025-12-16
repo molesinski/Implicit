@@ -1,6 +1,4 @@
-﻿#pragma warning disable SA1313 // Variable names should begin with lower-case letter
-
-namespace Implicit
+﻿namespace Implicit
 {
     public static class Weight
     {
@@ -13,15 +11,15 @@ namespace Implicit
 
             var n = data.Keys.Count;
             var idf = data
-                .SelectMany(o => o.Value)
-                .GroupBy(o => o.Key)
-                .ToDictionary(o => o.Key, o => Math.Log(n) - Math.Log(1 + o.Count()));
+                .SelectMany(x => x.Value)
+                .GroupBy(x => x.Key)
+                .ToDictionary(x => x.Key, x => Math.Log(n) - Math.Log(1 + x.Count()));
 
             var weighted = data
-                .SelectMany(o => o.Value, (o, p) => new { UserId = o.Key, ItemId = p.Key, Confidence = p.Value })
-                .Select(o => new { o.UserId, o.ItemId, Confidence = Math.Sqrt(o.Confidence) * idf[o.ItemId] })
-                .GroupBy(o => o.UserId)
-                .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence));
+                .SelectMany(x => x.Value, (x, y) => new { UserId = x.Key, ItemId = y.Key, Confidence = y.Value })
+                .Select(x => new { x.UserId, x.ItemId, Confidence = Math.Sqrt(x.Confidence) * idf[x.ItemId] })
+                .GroupBy(x => x.UserId)
+                .ToDictionary(x => x.Key, x => x.ToDictionary(p => p.ItemId, p => p.Confidence));
 
             return weighted;
         }
@@ -57,7 +55,7 @@ namespace Implicit
                     });
         }
 
-        public static Dictionary<string, Dictionary<string, double>> BM25(Dictionary<string, Dictionary<string, double>> data, int K1 = 100, double B = 0.8)
+        public static Dictionary<string, Dictionary<string, double>> BM25(Dictionary<string, Dictionary<string, double>> data, int k1 = 100, double b = 0.8)
         {
             if (data is null)
             {
@@ -66,24 +64,24 @@ namespace Implicit
 
             var n = data.Keys.Count;
             var idf = data
-                .SelectMany(o => o.Value)
-                .GroupBy(o => o.Key)
-                .ToDictionary(o => o.Key, o => Math.Log(n) - Math.Log(1 + o.Count()));
+                .SelectMany(x => x.Value)
+                .GroupBy(x => x.Key)
+                .ToDictionary(x => x.Key, x => Math.Log(n) - Math.Log(1 + x.Count()));
 
-            var averageLength = data.Average(o => o.Value.Count);
+            var averageLength = data.Average(x => x.Value.Count);
             var lengthNorm = data
-                .ToDictionary(o => o.Key, o => 1.0 - B + (B * o.Value.Count / averageLength));
+                .ToDictionary(x => x.Key, x => 1.0 - b + (b * x.Value.Count / averageLength));
 
             var weighted = data
-                .SelectMany(o => o.Value, (o, p) => new { UserId = o.Key, ItemId = p.Key, Confidence = p.Value })
-                .Select(o => new { o.UserId, o.ItemId, Confidence = o.Confidence * (K1 + 1.0) / ((K1 * lengthNorm[o.UserId]) + o.Confidence) * idf[o.ItemId] })
-                .GroupBy(o => o.UserId)
-                .ToDictionary(o => o.Key, o => o.ToDictionary(p => p.ItemId, p => p.Confidence));
+                .SelectMany(x => x.Value, (x, y) => new { UserId = x.Key, ItemId = y.Key, Confidence = y.Value })
+                .Select(x => new { x.UserId, x.ItemId, Confidence = x.Confidence * (k1 + 1.0) / ((k1 * lengthNorm[x.UserId]) + x.Confidence) * idf[x.ItemId] })
+                .GroupBy(x => x.UserId)
+                .ToDictionary(x => x.Key, x => x.ToDictionary(p => p.ItemId, p => p.Confidence));
 
             return weighted;
         }
 
-        public static IEnumerable<DataRow> BM25(IEnumerable<DataRow> data, int K1 = 100, double B = 0.8)
+        public static IEnumerable<DataRow> BM25(IEnumerable<DataRow> data, int k1 = 100, double b = 0.8)
         {
             if (data is null)
             {
@@ -103,15 +101,15 @@ namespace Implicit
             }
 
             var n = users.Count;
-            var averageLength = users.Average(o => o.Value);
+            var averageLength = users.Average(x => x.Value);
 
             return data
                 .Select(
                     userItem =>
                     {
                         var idf = Math.Log(n) - Math.Log(1 + items[userItem.ItemId]);
-                        var lengthNorm = 1.0 - B + (B * users[userItem.UserId] / averageLength);
-                        var confidence = userItem.Confidence * (K1 + 1.0) / ((K1 * lengthNorm) + userItem.Confidence) * idf;
+                        var lengthNorm = 1.0 - b + (b * users[userItem.UserId] / averageLength);
+                        var confidence = userItem.Confidence * (k1 + 1.0) / ((k1 * lengthNorm) + userItem.Confidence) * idf;
 
                         return new DataRow(userItem.UserId, userItem.ItemId, confidence);
                     });
