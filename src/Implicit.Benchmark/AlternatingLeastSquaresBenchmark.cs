@@ -33,7 +33,7 @@ namespace Implicit.Benchmark
                     break;
             }
 
-            this.data = DataMatrix.Load(DataFactory.GetLastFm360k());
+            this.data = DataMatrix.Build(DataFactory.GetLastFm360k());
         }
 
         [Benchmark(OperationsPerInvoke = 1)]

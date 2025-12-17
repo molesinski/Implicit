@@ -17,7 +17,7 @@ namespace Implicit.Tests
             {
                 var items = recommender.RecommendUser(userId).Take(25);
 
-                Assert.Equal(userId, items.Except(data[userId].Keys).First());
+                Assert.Equal(userId, items.Select(x => x.Key).Except(data[userId].Keys).First());
             }
         }
 
@@ -34,7 +34,7 @@ namespace Implicit.Tests
 
                 foreach (var item in items)
                 {
-                    Assert.Equal(int.Parse(item, CultureInfo.InvariantCulture) % 2, int.Parse(itemId, CultureInfo.InvariantCulture) % 2);
+                    Assert.Equal(int.Parse(item.Key, CultureInfo.InvariantCulture) % 2, int.Parse(itemId, CultureInfo.InvariantCulture) % 2);
                 }
             }
         }

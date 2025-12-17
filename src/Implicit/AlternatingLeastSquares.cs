@@ -316,6 +316,8 @@ namespace Implicit
                 storage.Instance.Add(new KeyValuePair<string, double>(item.Key, xu.DotProduct(yi)));
             }
 
+            storage.Instance.Sort((x, y) => y.Value.CompareTo(x.Value));
+
             return new RecommenderResult(storage);
         }
 
@@ -344,6 +346,8 @@ namespace Implicit
 
                 storage.Instance.Add(new KeyValuePair<string, double>(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
             }
+
+            storage.Instance.Sort((x, y) => y.Value.CompareTo(x.Value));
 
             return new RecommenderResult(storage);
         }
@@ -395,6 +399,8 @@ namespace Implicit
 
                 storage.Instance.Add(new KeyValuePair<string, double>(pair.Key, score));
             }
+
+            storage.Instance.Sort((x, y) => y.Value.CompareTo(x.Value));
 
             return new RecommenderResult(storage);
         }

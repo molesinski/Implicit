@@ -19,7 +19,7 @@ namespace Implicit.Tests
                 var items = recommender.RecommendUser(user!).Take(11);
 
                 var parity = items
-                    .Select(x => int.Parse(x, CultureInfo.InvariantCulture) % 2)
+                    .Select(x => int.Parse(x.Key, CultureInfo.InvariantCulture) % 2)
                     .GroupBy(x => x)
                     .OrderByDescending(x => x.Count())
                     .Select(x => x.Key)
@@ -38,11 +38,11 @@ namespace Implicit.Tests
 
             foreach (var userId in Enumerable.Range(0, n).Select(x => x.ToString(CultureInfo.InvariantCulture)))
             {
-                var user = recommender.ComputeUserFeatures(data[userId].Keys);
+                var user = recommender.ComputeUserFeatures(data[userId].Keys)!;
                 var items1 = recommender.RecommendUser(userId).Take(25);
-                var items2 = recommender.RecommendUser(user!).Take(25);
+                var items2 = recommender.RecommendUser(user).Take(25);
 
-                Assert.True(items1.SequenceEqual(items2));
+                Assert.True(items1.Select(x => x.Key).SequenceEqual(items2.Select(x => x.Key)));
             }
         }
     }

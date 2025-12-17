@@ -46,7 +46,7 @@
 
         internal Dictionary<int, Dictionary<int, double>> Ciu { get; }
 
-        public static DataMatrix Load(Dictionary<string, Dictionary<string, double>> data)
+        public static DataMatrix Build(Dictionary<string, Dictionary<string, double>> data)
         {
             if (data is null)
             {
@@ -104,7 +104,7 @@
                     ciu);
         }
 
-        public static DataMatrix Load(IEnumerable<DataRow> data)
+        public static DataMatrix Build(IEnumerable<DataRow> data)
         {
             if (data is null)
             {

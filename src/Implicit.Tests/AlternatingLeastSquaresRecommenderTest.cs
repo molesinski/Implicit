@@ -35,7 +35,7 @@ namespace Implicit.Tests
 
             foreach (var parameters in parametersScenarios)
             {
-                var recommender = AlternatingLeastSquares.Fit(DataMatrix.Load(data), parameters);
+                var recommender = AlternatingLeastSquares.Fit(DataMatrix.Build(data), parameters);
 
                 Assert.True(recommender.Loss < 0.00001);
             }
@@ -68,7 +68,7 @@ namespace Implicit.Tests
         protected override AlternatingLeastSquares CreateRecommender(Dictionary<string, Dictionary<string, double>> data)
         {
             var parameters = new AlternatingLeastSquaresParameters(factors: 3, regularization: 0, iterations: 15, useConjugateGradient: true);
-            var recommender = AlternatingLeastSquares.Fit(DataMatrix.Load(data), parameters);
+            var recommender = AlternatingLeastSquares.Fit(DataMatrix.Build(data), parameters);
 
             return recommender;
         }

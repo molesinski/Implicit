@@ -3,16 +3,14 @@ using Implicit.Utils;
 
 namespace Implicit
 {
-    public sealed class RecommenderResult : IReadOnlyList<string>, IDisposable
+    public sealed class RecommenderResult : IReadOnlyList<KeyValuePair<string, double>>, IDisposable
     {
-        private readonly ObjectPoolLease<ListSlim<KeyValuePair<string, double>>> storage;
+        private readonly ObjectPoolLease<List<KeyValuePair<string, double>>> storage;
         private bool isDisposed;
 
-        internal RecommenderResult(ObjectPoolLease<ListSlim<KeyValuePair<string, double>>> storage)
+        internal RecommenderResult(ObjectPoolLease<List<KeyValuePair<string, double>>> storage)
         {
             this.storage = storage;
-
-            this.storage.Instance.Sort(DescendingScoreComparer.Instance);
         }
 
         public int Count
@@ -28,7 +26,7 @@ namespace Implicit
             }
         }
 
-        public string this[int index]
+        public KeyValuePair<string, double> this[int index]
         {
             get
             {
@@ -37,12 +35,7 @@ namespace Implicit
                     throw new ObjectDisposedException(this.GetType().FullName);
                 }
 
-                if (index < 0 || index >= this.storage.Instance.Count)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(index));
-                }
-
-                return this.storage.Instance[index].Key;
+                return this.storage.Instance[index];
             }
         }
 
@@ -56,7 +49,7 @@ namespace Implicit
             return new Enumerator(this.storage.Instance);
         }
 
-        IEnumerator<string> IEnumerable<string>.GetEnumerator()
+        IEnumerator<KeyValuePair<string, double>> IEnumerable<KeyValuePair<string, double>>.GetEnumerator()
         {
             return this.GetEnumerator();
         }
@@ -76,14 +69,14 @@ namespace Implicit
             }
         }
 
-        public struct Enumerator : IEnumerator<string>
+        public struct Enumerator : IEnumerator<KeyValuePair<string, double>>
         {
-            private readonly ListSlim<KeyValuePair<string, double>> storage;
+            private readonly List<KeyValuePair<string, double>> storage;
             private readonly int count;
             private int index;
-            private string? current;
+            private KeyValuePair<string, double> current;
 
-            internal Enumerator(ListSlim<KeyValuePair<string, double>> storage)
+            internal Enumerator(List<KeyValuePair<string, double>> storage)
             {
                 this.storage = storage;
                 this.count = storage.Count;
@@ -91,7 +84,7 @@ namespace Implicit
                 this.current = default;
             }
 
-            public string Current
+            public KeyValuePair<string, double> Current
             {
                 get
                 {
@@ -100,7 +93,7 @@ namespace Implicit
                         throw new InvalidOperationException("Enumerator is currently positioned before first element or after last element.");
                     }
 
-                    return this.current!;
+                    return this.current;
                 }
             }
 
@@ -116,7 +109,7 @@ namespace Implicit
             {
                 if (this.index < this.count)
                 {
-                    this.current = this.storage[this.index].Key;
+                    this.current = this.storage[this.index];
                     this.index++;
 
                     return true;
@@ -136,16 +129,6 @@ namespace Implicit
 
             public void Dispose()
             {
-            }
-        }
-
-        private sealed class DescendingScoreComparer : IComparer<KeyValuePair<string, double>>
-        {
-            public static IComparer<KeyValuePair<string, double>> Instance { get; } = new DescendingScoreComparer();
-
-            public int Compare(KeyValuePair<string, double> x, KeyValuePair<string, double> y)
-            {
-                return y.Value.CompareTo(x.Value);
             }
         }
     }
