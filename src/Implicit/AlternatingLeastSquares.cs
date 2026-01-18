@@ -207,6 +207,18 @@ namespace Implicit
                 loss = CalculateLossFast(cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
             }
 
+            if (!parameters.UserFactors)
+            {
+                userMap.Clear();
+                userFactors = Matrix<double>.Build.Dense(userMap.Count, parameters.Factors);
+            }
+
+            if (!parameters.ItemFactors)
+            {
+                itemMap.Clear();
+                itemFactors = Matrix<double>.Build.Dense(itemMap.Count, parameters.Factors);
+            }
+
             return
                 new AlternatingLeastSquares(
                     parameters.Factors,

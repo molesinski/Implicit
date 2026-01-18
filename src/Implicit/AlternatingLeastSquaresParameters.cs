@@ -6,6 +6,8 @@
             int factors,
             double regularization = 0.01,
             int iterations = 10,
+            bool userFactors = true,
+            bool itemFactors = true,
             bool useConjugateGradient = true,
             bool calculateLossAtIteration = false,
             ParallelOptions? parallelOptions = null)
@@ -13,6 +15,8 @@
             this.Factors = factors;
             this.Regularization = regularization;
             this.Iterations = iterations;
+            this.UserFactors = userFactors;
+            this.ItemFactors = itemFactors;
             this.UseConjugateGradient = useConjugateGradient;
             this.CalculateLossAtIteration = calculateLossAtIteration;
             this.ParallelOptions = parallelOptions ?? new ParallelOptions();
@@ -23,6 +27,10 @@
         public double Regularization { get; }
 
         public int Iterations { get; }
+
+        public bool UserFactors { get; }
+
+        public bool ItemFactors { get; }
 
         public bool UseConjugateGradient { get; }
 
