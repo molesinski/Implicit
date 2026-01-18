@@ -1,13 +1,13 @@
 ﻿namespace Implicit.Utils
 {
-    internal readonly struct ObjectPoolLease<TItem> : IDisposable
+    internal readonly struct ObjectPoolSlimLease<TItem> : IDisposable
         where TItem : class
     {
-        private readonly ObjectPool<TItem> pool;
+        private readonly ObjectPoolSlim<TItem> pool;
         private readonly TItem instance;
 
-        internal ObjectPoolLease(
-            ObjectPool<TItem> pool,
+        internal ObjectPoolSlimLease(
+            ObjectPoolSlim<TItem> pool,
             TItem target)
         {
             this.pool = pool;

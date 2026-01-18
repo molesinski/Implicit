@@ -5,10 +5,10 @@ namespace Implicit
 {
     public sealed class RecommenderResult : IReadOnlyList<KeyValuePair<string, double>>, IDisposable
     {
-        private readonly ObjectPoolLease<List<KeyValuePair<string, double>>> storage;
+        private readonly ObjectPoolSlimLease<List<KeyValuePair<string, double>>> storage;
         private bool isDisposed;
 
-        internal RecommenderResult(ObjectPoolLease<List<KeyValuePair<string, double>>> storage)
+        internal RecommenderResult(ObjectPoolSlimLease<List<KeyValuePair<string, double>>> storage)
         {
             this.storage = storage;
         }

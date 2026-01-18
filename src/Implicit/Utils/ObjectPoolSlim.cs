@@ -1,6 +1,6 @@
 ﻿namespace Implicit.Utils
 {
-    internal sealed class ObjectPool<TItem>
+    internal sealed class ObjectPoolSlim<TItem>
         where TItem : class
     {
         private const int DegreeOfParallelism = 5;
@@ -9,7 +9,7 @@
         private readonly Func<TItem> factory;
         private readonly Action<TItem> resetter;
 
-        public ObjectPool(Func<TItem> factory, Action<TItem> resetter)
+        public ObjectPoolSlim(Func<TItem> factory, Action<TItem> resetter)
         {
             if (factory is null)
             {
@@ -26,7 +26,7 @@
             this.resetter = resetter;
         }
 
-        public ObjectPoolLease<TItem> Lease()
+        public ObjectPoolSlimLease<TItem> Lease()
         {
             var instance = default(TItem);
 
@@ -38,12 +38,12 @@
                 {
                     if (instance == Interlocked.CompareExchange(ref this.items[i].Value!, null, instance))
                     {
-                        return new ObjectPoolLease<TItem>(this, instance);
+                        return new ObjectPoolSlimLease<TItem>(this, instance);
                     }
                 }
             }
 
-            return new ObjectPoolLease<TItem>(this, this.factory());
+            return new ObjectPoolSlimLease<TItem>(this, this.factory());
         }
 
         internal void Return(TItem instance)
