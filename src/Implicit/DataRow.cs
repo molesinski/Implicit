@@ -5,7 +5,7 @@
         public DataRow(
             string userId,
             string itemId,
-            double confidence)
+            float confidence)
         {
             this.UserId = userId;
             this.ItemId = itemId;
@@ -16,6 +16,6 @@
 
         public string ItemId { get; }
 
-        public double Confidence { get; }
+        public float Confidence { get; }
     }
 }

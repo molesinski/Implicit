@@ -10,6 +10,6 @@
 
         UserFeatures? GetUserFeatures(string userId);
 
-        UserFeatures? ComputeUserFeatures(Dictionary<string, double> items);
+        UserFeatures? ComputeUserFeatures(Dictionary<string, float> items);
     }
 }

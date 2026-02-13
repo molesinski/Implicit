@@ -3,12 +3,12 @@ using Implicit.Utils;
 
 namespace Implicit
 {
-    public sealed class RecommenderResult : IReadOnlyList<KeyValuePair<string, double>>, IDisposable
+    public sealed class RecommenderResult : IReadOnlyList<KeyValuePair<string, float>>, IDisposable
     {
-        private readonly ObjectPoolSlimLease<List<KeyValuePair<string, double>>> storage;
+        private readonly ObjectPoolSlimLease<List<KeyValuePair<string, float>>> storage;
         private bool isDisposed;
 
-        internal RecommenderResult(ObjectPoolSlimLease<List<KeyValuePair<string, double>>> storage)
+        internal RecommenderResult(ObjectPoolSlimLease<List<KeyValuePair<string, float>>> storage)
         {
             this.storage = storage;
         }
@@ -26,7 +26,7 @@ namespace Implicit
             }
         }
 
-        public KeyValuePair<string, double> this[int index]
+        public KeyValuePair<string, float> this[int index]
         {
             get
             {
@@ -49,7 +49,7 @@ namespace Implicit
             return new Enumerator(this.storage.Instance);
         }
 
-        IEnumerator<KeyValuePair<string, double>> IEnumerable<KeyValuePair<string, double>>.GetEnumerator()
+        IEnumerator<KeyValuePair<string, float>> IEnumerable<KeyValuePair<string, float>>.GetEnumerator()
         {
             return this.GetEnumerator();
         }
@@ -69,14 +69,14 @@ namespace Implicit
             }
         }
 
-        public struct Enumerator : IEnumerator<KeyValuePair<string, double>>
+        public struct Enumerator : IEnumerator<KeyValuePair<string, float>>
         {
-            private readonly List<KeyValuePair<string, double>> storage;
+            private readonly List<KeyValuePair<string, float>> storage;
             private readonly int count;
             private int index;
-            private KeyValuePair<string, double> current;
+            private KeyValuePair<string, float> current;
 
-            internal Enumerator(List<KeyValuePair<string, double>> storage)
+            internal Enumerator(List<KeyValuePair<string, float>> storage)
             {
                 this.storage = storage;
                 this.count = storage.Count;
@@ -84,7 +84,7 @@ namespace Implicit
                 this.current = default;
             }
 
-            public KeyValuePair<string, double> Current
+            public KeyValuePair<string, float> Current
             {
                 get
                 {

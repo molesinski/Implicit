@@ -32,7 +32,7 @@ namespace Implicit.Benchmark
 
                     if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(artist))
                     {
-                        if (double.TryParse(parts.Last(), NumberStyles.None, CultureInfo.InvariantCulture, out var plays) && plays > 0)
+                        if (float.TryParse(parts.Last(), NumberStyles.None, CultureInfo.InvariantCulture, out var plays) && plays > 0)
                         {
                             yield return new DataRow(user, artist, plays);
                         }

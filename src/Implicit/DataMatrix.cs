@@ -5,8 +5,8 @@
         private DataMatrix(
             Dictionary<string, int> userMap,
             Dictionary<string, int> itemMap,
-            Dictionary<int, Dictionary<int, double>> cui,
-            Dictionary<int, Dictionary<int, double>> ciu)
+            Dictionary<int, Dictionary<int, float>> cui,
+            Dictionary<int, Dictionary<int, float>> ciu)
         {
             this.UserMap = userMap;
             this.ItemMap = itemMap;
@@ -30,11 +30,11 @@
             }
         }
 
-        public double FillFactor
+        public float FillFactor
         {
             get
             {
-                return 1.0 * this.Cui.Values.Sum(x => x.Values.Count) / (this.UserMap.Count * this.ItemMap.Count);
+                return 1f * this.Cui.Values.Sum(x => x.Values.Count) / (this.UserMap.Count * this.ItemMap.Count);
             }
         }
 
@@ -42,11 +42,11 @@
 
         internal Dictionary<string, int> ItemMap { get; }
 
-        internal Dictionary<int, Dictionary<int, double>> Cui { get; }
+        internal Dictionary<int, Dictionary<int, float>> Cui { get; }
 
-        internal Dictionary<int, Dictionary<int, double>> Ciu { get; }
+        internal Dictionary<int, Dictionary<int, float>> Ciu { get; }
 
-        public static DataMatrix Build(Dictionary<string, Dictionary<string, double>> data)
+        public static DataMatrix Build(Dictionary<string, Dictionary<string, float>> data)
         {
             if (data is null)
             {
@@ -55,8 +55,8 @@
 
             var userMap = new Dictionary<string, int>();
             var itemMap = new Dictionary<string, int>();
-            var cui = new Dictionary<int, Dictionary<int, double>>();
-            var ciu = new Dictionary<int, Dictionary<int, double>>();
+            var cui = new Dictionary<int, Dictionary<int, float>>();
+            var ciu = new Dictionary<int, Dictionary<int, float>>();
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
@@ -80,12 +80,12 @@
 
                     if (!cui.TryGetValue(u, out var user))
                     {
-                        cui.Add(u, user = new Dictionary<int, double>());
+                        cui.Add(u, user = new Dictionary<int, float>());
                     }
 
                     if (!ciu.TryGetValue(i, out var item))
                     {
-                        ciu.Add(i, item = new Dictionary<int, double>());
+                        ciu.Add(i, item = new Dictionary<int, float>());
                     }
 
                     user.TryGetValue(i, out var userConfidence);
@@ -113,8 +113,8 @@
 
             var userMap = new Dictionary<string, int>();
             var itemMap = new Dictionary<string, int>();
-            var cui = new Dictionary<int, Dictionary<int, double>>();
-            var ciu = new Dictionary<int, Dictionary<int, double>>();
+            var cui = new Dictionary<int, Dictionary<int, float>>();
+            var ciu = new Dictionary<int, Dictionary<int, float>>();
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
@@ -136,12 +136,12 @@
 
                 if (!cui.TryGetValue(u, out var user))
                 {
-                    cui.Add(u, user = new Dictionary<int, double>());
+                    cui.Add(u, user = new Dictionary<int, float>());
                 }
 
                 if (!ciu.TryGetValue(i, out var item))
                 {
-                    ciu.Add(i, item = new Dictionary<int, double>());
+                    ciu.Add(i, item = new Dictionary<int, float>());
                 }
 
                 user.TryGetValue(i, out var userConfidence);

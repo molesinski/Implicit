@@ -4,7 +4,7 @@
     {
         public AlternatingLeastSquaresParameters(
             int factors,
-            double regularization = 0.01,
+            float regularization = 0.01f,
             int iterations = 10,
             bool userFactors = true,
             bool itemFactors = true,
@@ -24,7 +24,7 @@
 
         public int Factors { get; }
 
-        public double Regularization { get; }
+        public float Regularization { get; }
 
         public int Iterations { get; }
 
@@ -40,7 +40,7 @@
 
         public Action<AlternatingLeastSquaresIterationCompletedContext>? OnIterationCompleted { get; set; }
 
-        internal void IterationCompleted(int iteration, double loss, TimeSpan elapsed)
+        internal void IterationCompleted(int iteration, float loss, TimeSpan elapsed)
         {
             this.OnIterationCompleted?.Invoke(new AlternatingLeastSquaresIterationCompletedContext(iteration, loss, elapsed));
         }

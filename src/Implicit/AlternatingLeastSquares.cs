@@ -10,23 +10,23 @@ namespace Implicit
         private const int ConjugateGradientSteps = 3;
 
         private readonly int factors;
-        private readonly double regularization;
-        private readonly double loss;
+        private readonly float regularization;
+        private readonly float loss;
         private readonly Dictionary<string, int> userMap;
         private readonly Dictionary<string, int> itemMap;
-        private readonly Matrix<double> userFactors;
-        private readonly Matrix<double> itemFactors;
-        private Vector<double>? itemNorms;
-        private Matrix<double>? yty;
+        private readonly Matrix<float> userFactors;
+        private readonly Matrix<float> itemFactors;
+        private Vector<float>? itemNorms;
+        private Matrix<float>? yty;
 
         private AlternatingLeastSquares(
             int factors,
-            double regularization,
-            double loss,
+            float regularization,
+            float loss,
             Dictionary<string, int> userMap,
             Dictionary<string, int> itemMap,
-            Matrix<double> userFactors,
-            Matrix<double> itemFactors)
+            Matrix<float> userFactors,
+            Matrix<float> itemFactors)
         {
             this.factors = factors;
             this.regularization = regularization;
@@ -45,7 +45,7 @@ namespace Implicit
             }
         }
 
-        public double Regularization
+        public float Regularization
         {
             get
             {
@@ -53,7 +53,7 @@ namespace Implicit
             }
         }
 
-        public double Loss
+        public float Loss
         {
             get
             {
@@ -77,11 +77,11 @@ namespace Implicit
             }
         }
 
-        public Dictionary<string, double[]> UserFactors
+        public Dictionary<string, float[]> UserFactors
         {
             get
             {
-                var xu = Vector<double>.Build.Dense(this.factors);
+                var xu = Vector<float>.Build.Dense(this.factors);
 
                 return this.userMap
                     .ToDictionary(
@@ -95,11 +95,11 @@ namespace Implicit
             }
         }
 
-        public Dictionary<string, double[]> ItemFactors
+        public Dictionary<string, float[]> ItemFactors
         {
             get
             {
-                var yi = Vector<double>.Build.Dense(this.factors);
+                var yi = Vector<float>.Build.Dense(this.factors);
 
                 return this.itemMap
                     .ToDictionary(
@@ -113,17 +113,17 @@ namespace Implicit
             }
         }
 
-        private Vector<double> ItemNorms
+        private Vector<float> ItemNorms
         {
             get
             {
                 if (this.itemNorms is null)
                 {
-                    var itemNorms = this.itemFactors.RowNorms(2.0);
+                    var itemNorms = this.itemFactors.RowNorms(2.0).ToSingle();
 
                     for (var i = 0; i < itemNorms.Count; i++)
                     {
-                        if (itemNorms[i] == 0.0)
+                        if (itemNorms[i] == 0)
                         {
                             itemNorms[i] = UserFeatures.Epsilon;
                         }
@@ -136,7 +136,7 @@ namespace Implicit
             }
         }
 
-        private Matrix<double> YtY
+        private Matrix<float> YtY
         {
             get
             {
@@ -169,9 +169,9 @@ namespace Implicit
             var cui = data.Cui;
             var ciu = data.Ciu;
 
-            var loss = 0.0;
-            var userFactors = Matrix<double>.Build.Random(userMap.Count, parameters.Factors, new ContinuousUniform(0, 0.01));
-            var itemFactors = Matrix<double>.Build.Random(itemMap.Count, parameters.Factors, new ContinuousUniform(0, 0.01));
+            var loss = 0f;
+            var userFactors = Matrix<float>.Build.Random(userMap.Count, parameters.Factors, new ContinuousUniform(0, 0.01));
+            var itemFactors = Matrix<float>.Build.Random(itemMap.Count, parameters.Factors, new ContinuousUniform(0, 0.01));
 
             for (var iteration = 0; iteration < parameters.Iterations; iteration++)
             {
@@ -210,13 +210,13 @@ namespace Implicit
             if (!parameters.UserFactors)
             {
                 userMap.Clear();
-                userFactors = Matrix<double>.Build.Dense(userMap.Count, parameters.Factors);
+                userFactors = Matrix<float>.Build.Dense(userMap.Count, parameters.Factors);
             }
 
             if (!parameters.ItemFactors)
             {
                 itemMap.Clear();
-                itemFactors = Matrix<double>.Build.Dense(itemMap.Count, parameters.Factors);
+                itemFactors = Matrix<float>.Build.Dense(itemMap.Count, parameters.Factors);
             }
 
             return
@@ -240,19 +240,19 @@ namespace Implicit
             using var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true);
 
             var factors = reader.ReadInt32();
-            var regularization = reader.ReadDouble();
-            var loss = reader.ReadDouble();
+            var regularization = (float)reader.ReadDouble();
+            var loss = (float)reader.ReadDouble();
 
             var users = reader.ReadInt32();
             var items = reader.ReadInt32();
 
             var userMap = new Dictionary<string, int>();
             var itemMap = new Dictionary<string, int>();
-            var userFactors = Matrix<double>.Build.Dense(users, factors);
-            var itemFactors = Matrix<double>.Build.Dense(items, factors);
+            var userFactors = Matrix<float>.Build.Dense(users, factors);
+            var itemFactors = Matrix<float>.Build.Dense(items, factors);
 
-            var xu = Vector<double>.Build.Dense(factors);
-            var yi = Vector<double>.Build.Dense(factors);
+            var xu = Vector<float>.Build.Dense(factors);
+            var yi = Vector<float>.Build.Dense(factors);
 
             for (var u = 0; u < users; u++)
             {
@@ -260,7 +260,7 @@ namespace Implicit
 
                 for (var f = 0; f < factors; f++)
                 {
-                    xu[f] = reader.ReadDouble();
+                    xu[f] = (float)reader.ReadDouble();
                 }
 
                 userMap.Add(userId, u);
@@ -273,7 +273,7 @@ namespace Implicit
 
                 for (var f = 0; f < factors; f++)
                 {
-                    yi[f] = reader.ReadDouble();
+                    yi[f] = (float)reader.ReadDouble();
                 }
 
                 itemMap.Add(itemId, i);
@@ -317,7 +317,7 @@ namespace Implicit
             }
 
             var xu = user.Vector;
-            var yi = Vector<double>.Build.Dense(this.factors);
+            var yi = Vector<float>.Build.Dense(this.factors);
 
             var storage = SharedObjectPools.KeyValueLists.Lease();
 
@@ -325,7 +325,7 @@ namespace Implicit
             {
                 this.itemFactors.Row(item.Value, yi);
 
-                storage.Instance.Add(new KeyValuePair<string, double>(item.Key, xu.DotProduct(yi)));
+                storage.Instance.Add(new KeyValuePair<string, float>(item.Key, xu.DotProduct(yi)));
             }
 
             storage.Instance.Sort((x, y) => y.Value.CompareTo(x.Value));
@@ -346,7 +346,7 @@ namespace Implicit
             }
 
             var yi = this.itemFactors.Row(i);
-            var yj = Vector<double>.Build.Dense(this.factors);
+            var yj = Vector<float>.Build.Dense(this.factors);
 
             var storage = SharedObjectPools.KeyValueLists.Lease();
 
@@ -356,7 +356,7 @@ namespace Implicit
 
                 this.itemFactors.Row(j, yj);
 
-                storage.Instance.Add(new KeyValuePair<string, double>(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
+                storage.Instance.Add(new KeyValuePair<string, float>(item.Key, yi.DotProduct(yj) / this.ItemNorms[j]));
             }
 
             storage.Instance.Sort((x, y) => y.Value.CompareTo(x.Value));
@@ -409,7 +409,7 @@ namespace Implicit
                 var norm = pair.Value.Norm;
                 var score = xu.DotProduct(xv) / norm;
 
-                storage.Instance.Add(new KeyValuePair<string, double>(pair.Key, score));
+                storage.Instance.Add(new KeyValuePair<string, float>(pair.Key, score));
             }
 
             storage.Instance.Sort((x, y) => y.Value.CompareTo(x.Value));
@@ -435,20 +435,20 @@ namespace Implicit
             return user;
         }
 
-        public UserFeatures? ComputeUserFeatures(Dictionary<string, double> items)
+        public UserFeatures? ComputeUserFeatures(Dictionary<string, float> items)
         {
             if (items is null)
             {
                 throw new ArgumentNullException(nameof(items));
             }
 
-            var userItems = default(Dictionary<int, double>);
+            var userItems = default(Dictionary<int, float>);
 
             foreach (var item in items)
             {
                 if (this.itemMap.TryGetValue(item.Key, out var i))
                 {
-                    userItems ??= new Dictionary<int, double>(items.Count);
+                    userItems ??= new Dictionary<int, float>(items.Count);
                     userItems.Add(i, item.Value);
                 }
             }
@@ -459,7 +459,7 @@ namespace Implicit
             }
 
             var u = 0;
-            var cui = new Dictionary<int, Dictionary<int, double>>(1) { [u] = userItems };
+            var cui = new Dictionary<int, Dictionary<int, float>>(1) { [u] = userItems };
             var xu = AlternatingLeastSquares.UserFactor(this.itemFactors, this.YtY, cui, u, this.regularization, this.factors);
 
             return new UserFeatures(xu);
@@ -474,12 +474,12 @@ namespace Implicit
 
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            var xu = Vector<double>.Build.Dense(this.factors);
-            var yi = Vector<double>.Build.Dense(this.factors);
+            var xu = Vector<float>.Build.Dense(this.factors);
+            var yi = Vector<float>.Build.Dense(this.factors);
 
             writer.Write(this.factors);
-            writer.Write(this.regularization);
-            writer.Write(this.loss);
+            writer.Write((double)this.regularization);
+            writer.Write((double)this.loss);
             writer.Write(this.userMap.Count);
             writer.Write(this.itemMap.Count);
 
@@ -491,7 +491,7 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    writer.Write(xu[f]);
+                    writer.Write((double)xu[f]);
                 }
             }
 
@@ -503,23 +503,23 @@ namespace Implicit
 
                 for (var f = 0; f < this.factors; f++)
                 {
-                    writer.Write(yi[f]);
+                    writer.Write((double)yi[f]);
                 }
             }
         }
 
-        private static Vector<double> UserFactor(Matrix<double> y, Matrix<double> yty, Dictionary<int, Dictionary<int, double>> cui, int u, double regularization, int factors)
+        private static Vector<float> UserFactor(Matrix<float> y, Matrix<float> yty, Dictionary<int, Dictionary<int, float>> cui, int u, float regularization, int factors)
         {
             var (a, b) = UserLinearEquation(y, yty, cui, u, regularization, factors);
 
             return a.Solve(b);
         }
 
-        private static (Matrix<double> A, Vector<double> B) UserLinearEquation(Matrix<double> y, Matrix<double> yty, Dictionary<int, Dictionary<int, double>> cui, int u, double regularization, int factors)
+        private static (Matrix<float> A, Vector<float> B) UserLinearEquation(Matrix<float> y, Matrix<float> yty, Dictionary<int, Dictionary<int, float>> cui, int u, float regularization, int factors)
         {
-            var yi = Vector<double>.Build.Dense(factors);
-            var a = yty.Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
-            var b = Vector<double>.Build.Dense(factors);
+            var yi = Vector<float>.Build.Dense(factors);
+            var a = yty.Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
+            var b = Vector<float>.Build.Dense(factors);
 
             foreach (var pair in cui[u])
             {
@@ -535,7 +535,7 @@ namespace Implicit
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static void LeastSquares(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquares(Dictionary<int, Dictionary<int, float>> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             var factors = x.ColumnCount;
@@ -551,10 +551,10 @@ namespace Implicit
                 });
         }
 
-        private static void LeastSquaresFast(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquaresFast(Dictionary<int, Dictionary<int, float>> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
         {
             var factors = x.ColumnCount;
-            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
@@ -562,11 +562,11 @@ namespace Implicit
                 parallelOptions,
                 () => new
                 {
-                    xu = Vector<double>.Build.Dense(factors),
-                    yi = Vector<double>.Build.Dense(factors),
-                    A = Matrix<double>.Build.Dense(factors, factors),
-                    b = Vector<double>.Build.Dense(factors),
-                    op = Matrix<double>.Build.Dense(factors, factors),
+                    xu = Vector<float>.Build.Dense(factors),
+                    yi = Vector<float>.Build.Dense(factors),
+                    A = Matrix<float>.Build.Dense(factors, factors),
+                    b = Vector<float>.Build.Dense(factors),
+                    op = Matrix<float>.Build.Dense(factors, factors),
                 },
                 (u, _, s) =>
                 {
@@ -597,12 +597,12 @@ namespace Implicit
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquaresConjugateGradient(Dictionary<int, Dictionary<int, float>> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             var users = x.RowCount;
             var factors = x.ColumnCount;
-            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
@@ -658,10 +658,10 @@ namespace Implicit
                 });
         }
 
-        private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
+        private static void LeastSquaresConjugateGradientFast(Dictionary<int, Dictionary<int, float>> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
         {
             var factors = x.ColumnCount;
-            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<double>.Build.DenseIdentity(factors).Multiply(regularization));
+            var yty = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DenseIdentity(factors).Multiply(regularization));
 
             Parallel.For(
                 0,
@@ -669,12 +669,12 @@ namespace Implicit
                 parallelOptions,
                 () => new
                 {
-                    xu = Vector<double>.Build.Dense(factors),
-                    yi = Vector<double>.Build.Dense(factors),
-                    r = Vector<double>.Build.Dense(factors),
-                    p = Vector<double>.Build.Dense(factors),
-                    pm = Vector<double>.Build.Dense(factors),
-                    Ap = Vector<double>.Build.Dense(factors),
+                    xu = Vector<float>.Build.Dense(factors),
+                    yi = Vector<float>.Build.Dense(factors),
+                    r = Vector<float>.Build.Dense(factors),
+                    p = Vector<float>.Build.Dense(factors),
+                    pm = Vector<float>.Build.Dense(factors),
+                    Ap = Vector<float>.Build.Dense(factors),
                 },
                 (u, _, s) =>
                 {
@@ -736,20 +736,20 @@ namespace Implicit
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static double CalculateLoss(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization)
+        private static float CalculateLoss(Dictionary<int, Dictionary<int, float>> cui, Matrix<float> x, Matrix<float> y, float regularization)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             var nnz = 0;
-            var loss = 0.0;
-            var total_confidence = 0.0;
-            var item_norm = 0.0;
-            var user_norm = 0.0;
+            var loss = 0f;
+            var total_confidence = 0f;
+            var item_norm = 0f;
+            var user_norm = 0f;
 
             var factors = x.ColumnCount;
             var yty = y.TransposeThisAndMultiply(y);
-            var xu = Vector<double>.Build.Dense(factors);
-            var yi = Vector<double>.Build.Dense(factors);
-            var r = Vector<double>.Build.Dense(factors);
+            var xu = Vector<float>.Build.Dense(factors);
+            var yi = Vector<float>.Build.Dense(factors);
+            var r = Vector<float>.Build.Dense(factors);
 
             for (var u = 0; u < x.RowCount; u++)
             {
@@ -787,17 +787,17 @@ namespace Implicit
             return loss / (total_confidence + (y.RowCount * x.RowCount) - nnz);
         }
 
-        private static double CalculateLossFast(Dictionary<int, Dictionary<int, double>> cui, Matrix<double> x, Matrix<double> y, double regularization, ParallelOptions parallelOptions)
+        private static float CalculateLossFast(Dictionary<int, Dictionary<int, float>> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
         {
             var mutex = new object();
             var factors = x.ColumnCount;
             var yty = y.TransposeThisAndMultiply(y);
 
             var nnz = 0;
-            var loss = 0.0;
-            var total_confidence = 0.0;
-            var item_norm = 0.0;
-            var user_norm = 0.0;
+            var loss = 0f;
+            var total_confidence = 0f;
+            var item_norm = 0f;
+            var user_norm = 0f;
 
             Parallel.For(
                 0,
@@ -805,13 +805,13 @@ namespace Implicit
                 parallelOptions,
                 () => new
                 {
-                    xu = Vector<double>.Build.Dense(factors),
-                    yi = Vector<double>.Build.Dense(factors),
-                    r = Vector<double>.Build.Dense(factors),
+                    xu = Vector<float>.Build.Dense(factors),
+                    yi = Vector<float>.Build.Dense(factors),
+                    r = Vector<float>.Build.Dense(factors),
                     nnz = new int[1],
-                    loss = new double[1],
-                    total_confidence = new double[1],
-                    user_norm = new double[1],
+                    loss = new float[1],
+                    total_confidence = new float[1],
+                    user_norm = new float[1],
                 },
                 (u, _, s) =>
                 {
@@ -857,8 +857,8 @@ namespace Implicit
                 parallelOptions,
                 () => new
                 {
-                    yi = Vector<double>.Build.Dense(factors),
-                    item_norm = new double[1],
+                    yi = Vector<float>.Build.Dense(factors),
+                    item_norm = new float[1],
                 },
                 (i, _, s) =>
                 {

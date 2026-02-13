@@ -28,7 +28,7 @@
 
         public static RecommenderResult RecommendUser(
             this IMatrixFactorizationRecommender recommender,
-            Dictionary<string, double> items)
+            Dictionary<string, float> items)
         {
             if (recommender is null)
             {
@@ -94,7 +94,7 @@
         public static RecommenderResult RankUsers(
             this IMatrixFactorizationRecommender recommender,
             string userId,
-            IEnumerable<KeyValuePair<string, Dictionary<string, double>>> userItems)
+            IEnumerable<KeyValuePair<string, Dictionary<string, float>>> userItems)
         {
             if (recommender is null)
             {
@@ -146,7 +146,7 @@
                 throw new ArgumentNullException(nameof(items));
             }
 
-            return recommender.ComputeUserFeatures(items.ToDictionary(x => x, x => 1.0));
+            return recommender.ComputeUserFeatures(items.ToDictionary(x => x, x => 1f));
         }
     }
 }

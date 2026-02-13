@@ -4,17 +4,17 @@ namespace Implicit
 {
     public sealed class UserFeatures
     {
-        internal const double Epsilon = 1e-10;
+        internal const float Epsilon = 1e-10f;
 
-        private double? norm;
+        private float? norm;
 
-        internal UserFeatures(Vector<double> vector)
+        internal UserFeatures(Vector<float> vector)
         {
             this.Vector = vector;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "By design")]
-        public double[] Factors
+        public float[] Factors
         {
             get
             {
@@ -22,17 +22,17 @@ namespace Implicit
             }
         }
 
-        internal Vector<double> Vector { get; }
+        internal Vector<float> Vector { get; }
 
-        internal double Norm
+        internal float Norm
         {
             get
             {
                 if (this.norm is null)
                 {
-                    var norm = this.Vector.Norm(2.0);
+                    var norm = (float)this.Vector.Norm(2.0);
 
-                    if (norm == 0.0)
+                    if (norm == 0f)
                     {
                         norm = Epsilon;
                     }

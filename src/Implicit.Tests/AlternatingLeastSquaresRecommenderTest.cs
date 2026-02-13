@@ -8,15 +8,15 @@ namespace Implicit.Tests
         [Fact]
         public void Factorize()
         {
-            var matrix = new double[][]
+            var matrix = new float[][]
             {
-                new double[] { 1, 1, 0, 1, 0, 0 },
-                new double[] { 0, 1, 1, 1, 0, 0 },
-                new double[] { 1, 0, 1, 0, 0, 0 },
-                new double[] { 1, 1, 0, 0, 0, 0 },
-                new double[] { 0, 0, 1, 1, 0, 1 },
-                new double[] { 0, 1, 0, 0, 0, 1 },
-                new double[] { 0, 0, 0, 0, 1, 1 },
+                new float[] { 1, 1, 0, 1, 0, 0 },
+                new float[] { 0, 1, 1, 1, 0, 0 },
+                new float[] { 1, 0, 1, 0, 0, 0 },
+                new float[] { 1, 1, 0, 0, 0, 0 },
+                new float[] { 0, 0, 1, 1, 0, 1 },
+                new float[] { 0, 1, 0, 0, 0, 1 },
+                new float[] { 0, 0, 0, 0, 1, 1 },
             };
 
             var data = Enumerable.Range(0, 7)
@@ -37,7 +37,7 @@ namespace Implicit.Tests
             {
                 var recommender = AlternatingLeastSquares.Fit(DataMatrix.Build(data), parameters);
 
-                Assert.True(recommender.Loss < 0.00001);
+                Assert.True(recommender.Loss < 0.00001f);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Implicit.Tests
             }
         }
 
-        protected override AlternatingLeastSquares CreateRecommender(Dictionary<string, Dictionary<string, double>> data)
+        protected override AlternatingLeastSquares CreateRecommender(Dictionary<string, Dictionary<string, float>> data)
         {
             var parameters = new AlternatingLeastSquaresParameters(factors: 3, regularization: 0, iterations: 15, useConjugateGradient: true);
             var recommender = AlternatingLeastSquares.Fit(DataMatrix.Build(data), parameters);
