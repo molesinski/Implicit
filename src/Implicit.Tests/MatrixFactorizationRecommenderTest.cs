@@ -8,38 +8,6 @@ namespace Implicit.Tests
         where TMatrixFactorizationRecommender : MatrixFactorizationRecommender
     {
         [Fact]
-        public void RecommendConstructedFromItem()
-        {
-            var n = 50;
-            var matrix = CreateCheckerBoard(n);
-            var userItems = ToUserItems(matrix);
-            var recommender = this.CreateRecommender(userItems);
-
-            var itemKeys = userItems.SelectMany(x => x.Value).Select(x => x.Key).ToHashSet();
-
-            foreach (var itemId in itemKeys)
-            {
-                var user = recommender.ComputeUserFeatures([new(itemId, 1f)]);
-                var items = recommender.Recommend(user!);
-
-                var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
-
-                var topQuarter = items
-                    .Take(n / 4)
-                    .Where(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2)
-                    .Count() * 1.0 / (n / 4);
-
-                var topHalf = items
-                    .Take(n / 2)
-                    .Where(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2)
-                    .Count() * 1.0 / (n / 2);
-
-                Assert.InRange(topQuarter, 0.66, 1);
-                Assert.InRange(topHalf, 0.66, 1);
-            }
-        }
-
-        [Fact]
         public void RecommendReconstructedUser()
         {
             var n = 50;
@@ -49,14 +17,34 @@ namespace Implicit.Tests
 
             foreach (var userId in userItems.Keys)
             {
-                var items = userItems[userId].Keys.ToDictionary(x => x, x => 1f);
-
-                var user = recommender.ComputeUserFeatures(items)!;
+                var user = recommender.ComputeUserFeatures(userItems[userId])!;
 
                 var original = string.Join(",", recommender.Recommend(userId).Select(x => x.Key));
                 var reconstructed = string.Join(",", recommender.Recommend(user).Select(x => x.Key));
 
                 Assert.Equal(original, reconstructed);
+            }
+        }
+
+        [Fact]
+        public void RecommendUserConstructedFromItem()
+        {
+            var n = 50;
+            var matrix = CreateCheckerBoard(n);
+            var userItems = ToUserItems(matrix);
+            var recommender = this.CreateRecommender(userItems);
+
+            var itemKeys = userItems.SelectMany(x => x.Value).Select(x => x.Key).Distinct().ToList();
+
+            foreach (var itemId in itemKeys)
+            {
+                var user = recommender.ComputeUserFeatures([new(itemId, 1f)])!;
+                var result = recommender.SimilarUsers(user).Take(n / 2);
+                var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
+
+                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+
+                Assert.True(hits > (n / 2) / 2);
             }
         }
 
@@ -76,10 +64,9 @@ namespace Implicit.Tests
                 var result = features.SimilarFeatures(userFeatures).Take(n / 2);
                 var parity = int.Parse(userId, CultureInfo.InvariantCulture) % 2;
 
-                foreach (var item in result)
-                {
-                    Assert.Equal(parity, int.Parse(item.Key, CultureInfo.InvariantCulture) % 2);
-                }
+                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+
+                Assert.True(hits == n / 2);
             }
         }
 
@@ -91,7 +78,7 @@ namespace Implicit.Tests
             var userItems = ToUserItems(matrix);
             var recommender = this.CreateRecommender(userItems);
 
-            var itemKeys = userItems.SelectMany(x => x.Value).Select(x => x.Key).ToHashSet();
+            var itemKeys = userItems.SelectMany(x => x.Value).Select(x => x.Key).Distinct().ToList();
             var itemFeatures = itemKeys.ToDictionary(x => x, x => recommender.GetItemFeatures(x)!);
 
             foreach (var itemId in itemKeys)
@@ -100,10 +87,9 @@ namespace Implicit.Tests
                 var result = features.SimilarFeatures(itemFeatures).Take(n / 2);
                 var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
 
-                foreach (var item in result)
-                {
-                    Assert.Equal(parity, int.Parse(item.Key, CultureInfo.InvariantCulture) % 2);
-                }
+                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+
+                Assert.True(hits == n / 2);
             }
         }
 

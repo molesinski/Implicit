@@ -33,13 +33,12 @@ namespace Implicit.Tests
 
             foreach (var userId in userItems.Keys)
             {
-                var users = recommender.SimilarUsers(userId).Take(n / 2);
+                var result = recommender.SimilarUsers(userId).Take(n / 2);
                 var parity = int.Parse(userId, CultureInfo.InvariantCulture) % 2;
 
-                foreach (var user in users)
-                {
-                    Assert.Equal(parity, int.Parse(user.Key, CultureInfo.InvariantCulture) % 2);
-                }
+                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+
+                Assert.True(hits == n / 2);
             }
         }
 
@@ -51,17 +50,16 @@ namespace Implicit.Tests
             var userItems = ToUserItems(matrix);
             var recommender = this.CreateRecommender(userItems);
 
-            var itemKeys = userItems.SelectMany(x => x.Value).Select(x => x.Key).ToHashSet();
+            var itemKeys = userItems.SelectMany(x => x.Value).Select(x => x.Key).Distinct().ToList();
 
             foreach (var itemId in itemKeys)
             {
-                var items = recommender.SimilarItems(itemId).Take(n / 2);
+                var result = recommender.SimilarItems(itemId).Take(n / 2);
                 var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
 
-                foreach (var item in items)
-                {
-                    Assert.Equal(parity, int.Parse(item.Key, CultureInfo.InvariantCulture) % 2);
-                }
+                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+
+                Assert.True(hits == n / 2);
             }
         }
 
@@ -73,9 +71,12 @@ namespace Implicit.Tests
             {
                 for (var j = 0; j < n; j++)
                 {
-                    if ((i != j) && (i % 2 == j % 2))
+                    if (i != j)
                     {
-                        matrix[i, j] = 1f;
+                        if (i % 2 == j % 2)
+                        {
+                            matrix[i, j] = 1f;
+                        }
                     }
                 }
             }
@@ -100,7 +101,7 @@ namespace Implicit.Tests
                 {
                     var confidence = matrix[i, j];
 
-                    if (confidence > 0)
+                    if (confidence != 0)
                     {
                         items.Add(j.ToString(CultureInfo.InvariantCulture), confidence);
                     }

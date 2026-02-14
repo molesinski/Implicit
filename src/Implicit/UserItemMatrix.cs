@@ -33,32 +33,32 @@ namespace Implicit
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
-            foreach (var userPair in userItems)
+            foreach (var user in userItems)
             {
-                foreach (var itemPair in userPair.Value)
+                foreach (var item in user.Value)
                 {
-                    if (!(itemPair.Value > 0))
+                    if (item.Value == 0)
                     {
                         continue;
                     }
 
-                    if (!users.TryGetValue(userPair.Key, out var u))
+                    if (!users.TryGetValue(user.Key, out var u))
                     {
-                        users.Add(userPair.Key, u = nextUserIndex++);
+                        users.Add(user.Key, u = nextUserIndex++);
                     }
 
-                    if (!items.TryGetValue(itemPair.Key, out var i))
+                    if (!items.TryGetValue(item.Key, out var i))
                     {
-                        items.Add(itemPair.Key, i = nextItemIndex++);
+                        items.Add(item.Key, i = nextItemIndex++);
                     }
 
                     if (values.TryGetValue((u, i), out var value))
                     {
-                        values[(u, i)] = value + itemPair.Value;
+                        values[(u, i)] = value + item.Value;
                     }
                     else
                     {
-                        values.Add((u, i), itemPair.Value);
+                        values.Add((u, i), item.Value);
                     }
                 }
             }
@@ -72,11 +72,11 @@ namespace Implicit
                     matrix);
         }
 
-        public static UserItemMatrix Build(IEnumerable<UserItemValue> userItems)
+        public static UserItemMatrix Build(IEnumerable<UserItemValue> userItemValues)
         {
-            if (userItems is null)
+            if (userItemValues is null)
             {
-                throw new ArgumentNullException(nameof(userItems));
+                throw new ArgumentNullException(nameof(userItemValues));
             }
 
             var users = new Dictionary<string, int>();
@@ -85,30 +85,30 @@ namespace Implicit
             var nextUserIndex = 0;
             var nextItemIndex = 0;
 
-            foreach (var userItem in userItems)
+            foreach (var userItemValue in userItemValues)
             {
-                if (!(userItem.Value > 0))
+                if (userItemValue.Value == 0)
                 {
                     continue;
                 }
 
-                if (!users.TryGetValue(userItem.UserId, out var u))
+                if (!users.TryGetValue(userItemValue.UserId, out var u))
                 {
-                    users.Add(userItem.UserId, u = nextUserIndex++);
+                    users.Add(userItemValue.UserId, u = nextUserIndex++);
                 }
 
-                if (!items.TryGetValue(userItem.ItemId, out var i))
+                if (!items.TryGetValue(userItemValue.ItemId, out var i))
                 {
-                    items.Add(userItem.ItemId, i = nextItemIndex++);
+                    items.Add(userItemValue.ItemId, i = nextItemIndex++);
                 }
 
                 if (values.TryGetValue((u, i), out var currentValue))
                 {
-                    values[(u, i)] = currentValue + userItem.Value;
+                    values[(u, i)] = currentValue + userItemValue.Value;
                 }
                 else
                 {
-                    values.Add((u, i), userItem.Value);
+                    values.Add((u, i), userItemValue.Value);
                 }
             }
 

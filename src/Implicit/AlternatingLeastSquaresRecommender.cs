@@ -89,19 +89,19 @@ namespace Implicit
             }
         }
 
-        public static AlternatingLeastSquaresRecommender Fit(UserItemMatrix userItems, AlternatingLeastSquaresParameters? parameters = null)
+        public static AlternatingLeastSquaresRecommender Fit(UserItemMatrix userItemMatrix, AlternatingLeastSquaresParameters? parameters = null)
         {
-            if (userItems is null)
+            if (userItemMatrix is null)
             {
-                throw new ArgumentNullException(nameof(userItems));
+                throw new ArgumentNullException(nameof(userItemMatrix));
             }
 
             parameters ??= new();
 
-            var users = userItems.Users;
-            var items = userItems.Items;
-            var cui = userItems.Matrix;
-            var ciu = userItems.Matrix.Transpose();
+            var users = userItemMatrix.Users;
+            var items = userItemMatrix.Items;
+            var cui = userItemMatrix.Matrix;
+            var ciu = userItemMatrix.Matrix.Transpose();
 
             var loss = default(float?);
             var userFactors = Matrix<float>.Build.Random(users.Count, parameters.Factors, new ContinuousUniform(0, 0.01, parameters.Random));
@@ -264,7 +264,7 @@ namespace Implicit
 
             foreach (var item in items)
             {
-                if (!(item.Value > 0))
+                if (item.Value == 0)
                 {
                     continue;
                 }
@@ -302,7 +302,7 @@ namespace Implicit
 
             foreach (var user in users)
             {
-                if (!(user.Value > 0))
+                if (user.Value == 0)
                 {
                     continue;
                 }
@@ -334,12 +334,23 @@ namespace Implicit
                 var confidence = alpha * value;
                 y.Row(i, s.yi);
 
-                s.yi.OuterProduct(s.yi, s.op);
-                s.op.Multiply(confidence - 1, s.op);
-                s.A.Add(s.op, s.A);
+                if (confidence > 0)
+                {
+                    s.yi.OuterProduct(s.yi, s.op);
+                    s.op.Multiply(confidence - 1, s.op);
+                    s.A.Add(s.op, s.A);
 
-                s.yi.Multiply(confidence, s.yi);
-                s.b.Add(s.yi, s.b);
+                    s.yi.Multiply(confidence, s.yi);
+                    s.b.Add(s.yi, s.b);
+                }
+                else
+                {
+                    confidence *= -1;
+
+                    s.yi.OuterProduct(s.yi, s.op);
+                    s.op.Multiply(confidence - 1, s.op);
+                    s.A.Add(s.op, s.A);
+                }
             }
 
             return s.A.Solve(s.b);
@@ -360,8 +371,17 @@ namespace Implicit
                     var confidence = alpha * value;
                     var yi = y.Row(i);
 
-                    a.Add(yi.OuterProduct(yi).Multiply(confidence - 1), a);
-                    b.Add(yi.Multiply(confidence), b);
+                    if (confidence > 0)
+                    {
+                        a.Add(yi.OuterProduct(yi).Multiply(confidence - 1), a);
+                        b.Add(yi.Multiply(confidence), b);
+                    }
+                    else
+                    {
+                        confidence *= -1;
+
+                        a.Add(yi.OuterProduct(yi).Multiply(confidence - 1), a);
+                    }
                 }
 
                 var xu = a.Solve(b);
@@ -399,12 +419,23 @@ namespace Implicit
                         var confidence = alpha * value;
                         y.Row(i, s.yi);
 
-                        s.yi.OuterProduct(s.yi, s.op);
-                        s.op.Multiply(confidence - 1, s.op);
-                        s.A.Add(s.op, s.A);
+                        if (confidence > 0)
+                        {
+                            s.yi.OuterProduct(s.yi, s.op);
+                            s.op.Multiply(confidence - 1, s.op);
+                            s.A.Add(s.op, s.A);
 
-                        s.yi.Multiply(confidence, s.yi);
-                        s.b.Add(s.yi, s.b);
+                            s.yi.Multiply(confidence, s.yi);
+                            s.b.Add(s.yi, s.b);
+                        }
+                        else
+                        {
+                            confidence *= -1;
+
+                            s.yi.OuterProduct(s.yi, s.op);
+                            s.op.Multiply(confidence - 1, s.op);
+                            s.A.Add(s.op, s.A);
+                        }
                     }
 
                     s.A.Solve(s.b, s.xu);
@@ -431,7 +462,16 @@ namespace Implicit
                     var confidence = alpha * value;
                     var yi = y.Row(i);
 
-                    r.Add(yi.Multiply(confidence - ((confidence - 1) * yi.DotProduct(xu))), r);
+                    if (confidence > 0)
+                    {
+                        r.Add(yi.Multiply(confidence - ((confidence - 1) * yi.DotProduct(xu))), r);
+                    }
+                    else
+                    {
+                        confidence *= -1;
+
+                        r.Add(yi.Multiply(-((confidence - 1) * yi.DotProduct(xu))), r);
+                    }
                 }
 
                 var p = r.Clone();
@@ -451,7 +491,16 @@ namespace Implicit
                         var confidence = alpha * value;
                         var yi = y.Row(i);
 
-                        ap.Add(yi.Multiply(yi.DotProduct(p)).Multiply(confidence - 1), ap);
+                        if (confidence > 0)
+                        {
+                            ap.Add(yi.Multiply(yi.DotProduct(p)).Multiply(confidence - 1), ap);
+                        }
+                        else
+                        {
+                            confidence *= -1;
+
+                            ap.Add(yi.Multiply(yi.DotProduct(p)).Multiply(confidence - 1), ap);
+                        }
                     }
 
                     var alpha2 = rsold / p.DotProduct(ap);
@@ -505,8 +554,18 @@ namespace Implicit
                         var confidence = alpha * value;
                         y.Row(i, s.yi);
 
-                        s.yi.Multiply(confidence - ((confidence - 1) * s.yi.DotProduct(s.xu)), s.yi);
-                        s.r.Add(s.yi, s.r);
+                        if (confidence > 0)
+                        {
+                            s.yi.Multiply(confidence - ((confidence - 1) * s.yi.DotProduct(s.xu)), s.yi);
+                            s.r.Add(s.yi, s.r);
+                        }
+                        else
+                        {
+                            confidence *= -1;
+
+                            s.yi.Multiply(-((confidence - 1) * s.yi.DotProduct(s.xu)), s.yi);
+                            s.r.Add(s.yi, s.r);
+                        }
                     }
 
                     s.r.CopyTo(s.p);
@@ -527,8 +586,18 @@ namespace Implicit
                             var confidence = alpha * value;
                             y.Row(i, s.yi);
 
-                            s.yi.Multiply((confidence - 1) * s.yi.DotProduct(s.p), s.yi);
-                            s.Ap.Add(s.yi, s.Ap);
+                            if (confidence > 0)
+                            {
+                                s.yi.Multiply((confidence - 1) * s.yi.DotProduct(s.p), s.yi);
+                                s.Ap.Add(s.yi, s.Ap);
+                            }
+                            else
+                            {
+                                confidence *= -1;
+
+                                s.yi.Multiply((confidence - 1) * s.yi.DotProduct(s.p), s.yi);
+                                s.Ap.Add(s.yi, s.Ap);
+                            }
                         }
 
                         var alpha2 = rsold / s.p.DotProduct(s.Ap);
@@ -576,7 +645,19 @@ namespace Implicit
                     var confidence = alpha * value;
                     var yi = y.Row(i);
 
-                    var temp = ((confidence - 1) * yi.DotProduct(xu)) - (2 * confidence);
+                    var temp = 1f;
+
+                    if (confidence > 0)
+                    {
+                        temp = -2 * confidence;
+                    }
+                    else
+                    {
+                        temp = 0;
+                        confidence *= -1;
+                    }
+
+                    temp = temp + ((confidence - 1) * yi.DotProduct(xu));
 
                     r = r.Add(yi.Multiply(temp));
 
@@ -640,7 +721,19 @@ namespace Implicit
                         var confidence = alpha * value;
                         y.Row(i, s.yi);
 
-                        var temp = ((confidence - 1) * s.yi.DotProduct(s.xu)) - (2 * confidence);
+                        var temp = 1f;
+
+                        if (confidence > 0)
+                        {
+                            temp = -2 * confidence;
+                        }
+                        else
+                        {
+                            temp = 0;
+                            confidence *= -1;
+                        }
+
+                        temp = temp + ((confidence - 1) * s.yi.DotProduct(s.xu));
 
                         s.yi.Multiply(temp, s.yi);
                         s.r.Add(s.yi, s.r);

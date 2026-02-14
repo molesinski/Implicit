@@ -7,9 +7,11 @@ namespace Implicit.Tests
     public class AlternatingLeastSquaresRecommenderTest : MatrixFactorizationRecommenderTest<AlternatingLeastSquaresRecommender>
     {
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void Factorize(bool useConjugateGradient)
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(true, true)]
+        [InlineData(false, false)]
+        public void Factorize(bool conjugateGradient, bool negativeConfidence)
         {
             var original = Matrix<float>.Build.DenseOfRowArrays(
                 new float[][]
@@ -23,15 +25,30 @@ namespace Implicit.Tests
                     new float[] { 0, 0, 0, 0, 1, 1 },
                 });
 
+            var training = original;
+
+            if (negativeConfidence)
+            {
+                training = training.Clone();
+
+                foreach (var (i, j, value) in training.EnumerateIndexed())
+                {
+                    if (value == 0)
+                    {
+                        training[i, j] = -1;
+                    }
+                }
+            }
+
             var recommender =
                 AlternatingLeastSquaresRecommender.Fit(
-                    UserItemMatrix.Build(ToUserItems(original)),
+                    UserItemMatrix.Build(ToUserItems(training)),
                     new AlternatingLeastSquaresParameters(
                         factors: 6,
                         regularization: 0,
                         alpha: 2,
                         iterations: 15,
-                        useConjugateGradient: useConjugateGradient,
+                        useConjugateGradient: conjugateGradient,
                         random: new Random(42)));
 
             var reconstructed = ToReconstructedMatrix(recommender);
