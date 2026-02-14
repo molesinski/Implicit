@@ -1,55 +1,117 @@
 ﻿using System.Globalization;
+using MathNet.Numerics.LinearAlgebra;
 using Xunit;
 
 namespace Implicit.Tests
 {
     public abstract class RecommenderTest<TRecommender>
-        where TRecommender : IRecommender
+        where TRecommender : Recommender
     {
         [Fact]
-        public void RecommendUser()
+        public void Recommend()
         {
             var n = 50;
-            var data = this.CreateCheckerBoard(n);
-            var recommender = this.CreateRecommender(data);
+            var matrix = CreateCheckerBoard(n);
+            var userItems = ToUserItems(matrix);
+            var recommender = this.CreateRecommender(userItems);
 
-            foreach (var userId in Enumerable.Range(0, n).Select(x => x.ToString(CultureInfo.InvariantCulture)))
+            foreach (var userId in userItems.Keys)
             {
-                var items = recommender.RecommendUser(userId).Take(25);
+                var items = recommender.Recommend(userId);
 
-                Assert.Equal(userId, items.Select(x => x.Key).Except(data[userId].Keys).First());
+                Assert.Equal(userId, items.Select(x => x.Key).Except(userItems[userId].Keys).First());
             }
         }
 
         [Fact]
-        public void RecommendItem()
+        public void SimilarUsers()
         {
             var n = 50;
-            var data = this.CreateCheckerBoard(n);
-            var recommender = this.CreateRecommender(data);
+            var matrix = CreateCheckerBoard(n);
+            var userItems = ToUserItems(matrix);
+            var recommender = this.CreateRecommender(userItems);
 
-            foreach (var itemId in Enumerable.Range(0, n).Select(x => x.ToString(CultureInfo.InvariantCulture)))
+            foreach (var userId in userItems.Keys)
             {
-                var items = recommender.RecommendItem(itemId).Take(10);
+                var users = recommender.SimilarUsers(userId).Take(n / 2);
+                var parity = int.Parse(userId, CultureInfo.InvariantCulture) % 2;
 
-                foreach (var item in items)
+                foreach (var user in users)
                 {
-                    Assert.Equal(int.Parse(item.Key, CultureInfo.InvariantCulture) % 2, int.Parse(itemId, CultureInfo.InvariantCulture) % 2);
+                    Assert.Equal(parity, int.Parse(user.Key, CultureInfo.InvariantCulture) % 2);
                 }
             }
         }
 
-        protected abstract TRecommender CreateRecommender(Dictionary<string, Dictionary<string, float>> data);
-
-        protected Dictionary<string, Dictionary<string, float>> CreateCheckerBoard(int n)
+        [Fact]
+        public void SimilarItems()
         {
-            return Enumerable.Range(0, n)
-                .SelectMany(x => Enumerable.Range(0, n), (i, j) => new { i, j })
-                .Where(x => x.i % 2 == x.j % 2)
-                .Where(x => x.i != x.j)
-                .Select(x => new { UserId = x.i.ToString(CultureInfo.InvariantCulture), ItemId = x.j.ToString(CultureInfo.InvariantCulture), Confidence = 1f })
-                .GroupBy(x => x.UserId)
-                .ToDictionary(x => x.Key, x => x.ToDictionary(x => x.ItemId, x => x.Confidence));
+            var n = 50;
+            var matrix = CreateCheckerBoard(n);
+            var userItems = ToUserItems(matrix);
+            var recommender = this.CreateRecommender(userItems);
+
+            var itemKeys = userItems.SelectMany(x => x.Value).Select(x => x.Key).ToHashSet();
+
+            foreach (var itemId in itemKeys)
+            {
+                var items = recommender.SimilarItems(itemId).Take(n / 2);
+                var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
+
+                foreach (var item in items)
+                {
+                    Assert.Equal(parity, int.Parse(item.Key, CultureInfo.InvariantCulture) % 2);
+                }
+            }
         }
+
+        protected static Matrix<float> CreateCheckerBoard(int n)
+        {
+            var matrix = Matrix<float>.Build.Dense(n, n);
+
+            for (var i = 0; i < n; i++)
+            {
+                for (var j = 0; j < n; j++)
+                {
+                    if ((i != j) && (i % 2 == j % 2))
+                    {
+                        matrix[i, j] = 1f;
+                    }
+                }
+            }
+
+            return matrix;
+        }
+
+        protected static Dictionary<string, Dictionary<string, float>> ToUserItems(Matrix<float> matrix)
+        {
+            if (matrix is null)
+            {
+                throw new ArgumentNullException(nameof(matrix));
+            }
+
+            var userItems = new Dictionary<string, Dictionary<string, float>>();
+
+            for (var i = 0; i < matrix.RowCount; i++)
+            {
+                var items = new Dictionary<string, float>();
+
+                for (var j = 0; j < matrix.ColumnCount; j++)
+                {
+                    var confidence = matrix[i, j];
+
+                    if (confidence > 0)
+                    {
+                        items.Add(j.ToString(CultureInfo.InvariantCulture), confidence);
+                    }
+                }
+
+                userItems.Add(i.ToString(CultureInfo.InvariantCulture), items);
+            }
+
+            return userItems;
+        }
+
+        protected abstract TRecommender CreateRecommender(Dictionary<string, Dictionary<string, float>> userItems);
     }
 }

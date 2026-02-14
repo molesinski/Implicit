@@ -1,6 +1,7 @@
 ﻿namespace Implicit.Utils
 {
-    internal readonly struct ObjectPoolSlimLease<TItem> : IDisposable
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "By design")]
+    public readonly struct ObjectPoolSlimLease<TItem> : IDisposable
         where TItem : class
     {
         private readonly ObjectPoolSlim<TItem> pool;

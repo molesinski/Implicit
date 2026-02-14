@@ -4,9 +4,10 @@ using MathNet.Numerics.Providers.MKL;
 
 namespace Implicit.Benchmark
 {
+    [MemoryDiagnoser(false)]
     public class AlternatingLeastSquaresBenchmark
     {
-        private DataMatrix? data;
+        private UserItemMatrix? data;
 
         public enum ProviderId
         {
@@ -17,7 +18,7 @@ namespace Implicit.Benchmark
         [Params(64)]
         public int Factors { get; set; }
 
-        [Params(ProviderId.NativeMKL)]
+        [Params(ProviderId.Managed, ProviderId.NativeMKL)]
         public ProviderId Provider { get; set; }
 
         [GlobalSetup]
@@ -29,24 +30,20 @@ namespace Implicit.Benchmark
                     Control.UseManaged();
                     break;
                 case ProviderId.NativeMKL:
-                    MklControl.UseNativeMKL(MklConsistency.Auto, MklPrecision.Double, MklAccuracy.High);
+                    MklControl.UseNativeMKL(MklConsistency.Auto, MklPrecision.Single, MklAccuracy.High);
                     break;
             }
 
-            this.data = DataMatrix.Build(DataFactory.GetLastFm360k());
+            this.data = UserItemMatrix.Build(DataFactory.CreateCheckerBoard(n: 3_000));
         }
 
         [Benchmark(OperationsPerInvoke = 1)]
-        public IMatrixFactorizationRecommender FitModel()
+        public MatrixFactorizationRecommender FitModel()
         {
-            var parameters = new AlternatingLeastSquaresParameters(
-                factors: this.Factors,
-                regularization: 0.01f,
-                iterations: 1,
-                useConjugateGradient: true,
-                calculateLossAtIteration: true);
-
-            var recommender = AlternatingLeastSquares.Fit(this.data!, parameters);
+            var recommender = AlternatingLeastSquaresRecommender.Fit(
+                this.data!,
+                new AlternatingLeastSquaresParameters(
+                    factors: this.Factors));
 
             return recommender;
         }

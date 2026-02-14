@@ -1,6 +1,6 @@
 ﻿namespace Implicit.Utils
 {
-    internal sealed class ObjectPoolSlim<TItem>
+    public sealed class ObjectPoolSlim<TItem>
         where TItem : class
     {
         private const int DegreeOfParallelism = 5;

@@ -5,24 +5,38 @@ namespace Implicit
 {
     public sealed class RecommenderResult : IReadOnlyList<KeyValuePair<string, float>>, IDisposable
     {
-        private readonly ObjectPoolSlimLease<List<KeyValuePair<string, float>>> storage;
-        private bool isDisposed;
+        private static readonly List<KeyValuePair<string, float>> EmptyStorage = new();
+        private static readonly ObjectPoolSlim<List<KeyValuePair<string, float>>> StoragePool = new(() => new(), x => x.Clear());
 
-        internal RecommenderResult(ObjectPoolSlimLease<List<KeyValuePair<string, float>>> storage)
+        private readonly ObjectPoolSlimLease<List<KeyValuePair<string, float>>>? storage;
+        private bool disposed;
+
+        private RecommenderResult()
+        {
+        }
+
+        private RecommenderResult(ObjectPoolSlimLease<List<KeyValuePair<string, float>>> storage)
         {
             this.storage = storage;
         }
+
+        public static RecommenderResult Empty { get; } = new();
 
         public int Count
         {
             get
             {
-                if (this.isDisposed)
+                if (this.storage is null)
+                {
+                    return EmptyStorage.Count;
+                }
+
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException(this.GetType().FullName);
                 }
 
-                return this.storage.Instance.Count;
+                return this.storage.Value.Instance.Count;
             }
         }
 
@@ -30,23 +44,47 @@ namespace Implicit
         {
             get
             {
-                if (this.isDisposed)
+                if (this.storage is null)
+                {
+                    return EmptyStorage[index];
+                }
+
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException(this.GetType().FullName);
                 }
 
-                return this.storage.Instance[index];
+                return this.storage.Value.Instance[index];
             }
+        }
+
+        public static RecommenderResult Create(Action<List<KeyValuePair<string, float>>> builder)
+        {
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+
+            var storage = StoragePool.Lease();
+
+            builder(storage.Instance);
+
+            return new RecommenderResult(storage);
         }
 
         public Enumerator GetEnumerator()
         {
-            if (this.isDisposed)
+            if (this.storage is null)
+            {
+                return new Enumerator(EmptyStorage);
+            }
+
+            if (this.disposed)
             {
                 throw new ObjectDisposedException(this.GetType().FullName);
             }
 
-            return new Enumerator(this.storage.Instance);
+            return new Enumerator(this.storage.Value.Instance);
         }
 
         IEnumerator<KeyValuePair<string, float>> IEnumerable<KeyValuePair<string, float>>.GetEnumerator()
@@ -61,11 +99,10 @@ namespace Implicit
 
         public void Dispose()
         {
-            if (!this.isDisposed)
+            if (!this.disposed)
             {
-                this.storage.Dispose();
-
-                this.isDisposed = true;
+                this.storage?.Dispose();
+                this.disposed = true;
             }
         }
 
@@ -84,20 +121,15 @@ namespace Implicit
                 this.current = default;
             }
 
-            public KeyValuePair<string, float> Current
+            public readonly KeyValuePair<string, float> Current
             {
                 get
                 {
-                    if (this.index == 0 || this.index == this.count + 1)
-                    {
-                        throw new InvalidOperationException("Enumerator is currently positioned before first element or after last element.");
-                    }
-
                     return this.current;
                 }
             }
 
-            object IEnumerator.Current
+            readonly object IEnumerator.Current
             {
                 get
                 {
@@ -121,13 +153,13 @@ namespace Implicit
                 return false;
             }
 
-            public void Reset()
+            void IEnumerator.Reset()
             {
                 this.index = 0;
                 this.current = default;
             }
 
-            public void Dispose()
+            public readonly void Dispose()
             {
             }
         }
