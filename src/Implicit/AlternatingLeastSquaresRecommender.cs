@@ -64,7 +64,9 @@ namespace Implicit
                 if (this.xtxir is null)
                 {
                     var x = this.UserFactors;
-                    var xtxir = x.TransposeThisAndMultiply(x).Add(Matrix<float>.Build.DiagonalIdentity(x.ColumnCount).Multiply(this.regularization));
+                    var xtxir = x.TransposeThisAndMultiply(x);
+
+                    xtxir.Add(Matrix<float>.Build.DiagonalIdentity(x.ColumnCount).Multiply(this.regularization), xtxir);
 
                     this.xtxir = xtxir;
                 }
@@ -80,7 +82,9 @@ namespace Implicit
                 if (this.ytyir is null)
                 {
                     var y = this.ItemFactors;
-                    var ytyir = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DiagonalIdentity(y.ColumnCount).Multiply(this.regularization));
+                    var ytyir = y.TransposeThisAndMultiply(y);
+
+                    ytyir.Add(Matrix<float>.Build.DiagonalIdentity(y.ColumnCount).Multiply(this.regularization), ytyir);
 
                     this.ytyir = ytyir;
                 }
@@ -101,7 +105,13 @@ namespace Implicit
             var users = userItemMatrix.Users;
             var items = userItemMatrix.Items;
             var cui = userItemMatrix.Matrix;
-            var ciu = userItemMatrix.Matrix.Transpose();
+
+            if (parameters.Alpha != 1f)
+            {
+                cui = cui.Multiply(parameters.Alpha);
+            }
+
+            var ciu = cui.Transpose();
 
             var loss = default(float?);
             var userFactors = Matrix<float>.Build.Random(users.Count, parameters.Factors, new ContinuousUniform(0, 0.01, parameters.Random));
@@ -115,20 +125,20 @@ namespace Implicit
 
                 if (parameters.UseConjugateGradient)
                 {
-                    LeastSquaresConjugateGradient(cui, userFactors, itemFactors, parameters.Regularization, parameters.Alpha, parameters.ConjugateGradientSteps, parameters.ParallelOptions);
-                    LeastSquaresConjugateGradient(ciu, itemFactors, userFactors, parameters.Regularization, parameters.Alpha, parameters.ConjugateGradientSteps, parameters.ParallelOptions);
+                    LeastSquaresConjugateGradient(cui, userFactors, itemFactors, parameters.Regularization, parameters.ConjugateGradientSteps, parameters.ParallelOptions);
+                    LeastSquaresConjugateGradient(ciu, itemFactors, userFactors, parameters.Regularization, parameters.ConjugateGradientSteps, parameters.ParallelOptions);
                 }
                 else
                 {
-                    LeastSquares(cui, userFactors, itemFactors, parameters.Regularization, parameters.Alpha, parameters.ParallelOptions);
-                    LeastSquares(ciu, itemFactors, userFactors, parameters.Regularization, parameters.Alpha, parameters.ParallelOptions);
+                    LeastSquares(cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
+                    LeastSquares(ciu, itemFactors, userFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
 
                 if (parameters.CalculateLossAtIteration)
                 {
                     parameters.ParallelOptions.CancellationToken.ThrowIfCancellationRequested();
 
-                    loss = CalculateLoss(cui, userFactors, itemFactors, parameters.Regularization, parameters.Alpha, parameters.ParallelOptions);
+                    loss = CalculateLoss(cui, userFactors, itemFactors, parameters.Regularization, parameters.ParallelOptions);
                 }
 
                 parameters.IterationCompleted(iteration, loss, stopwatch.Elapsed);
@@ -281,7 +291,12 @@ namespace Implicit
                 return null;
             }
 
-            var xu = UserFactor(this.ItemFactors, this.YtYiR, ci, this.alpha, state.Instance);
+            if (this.alpha != 1f)
+            {
+                ci.Multiply(this.alpha, ci);
+            }
+
+            var xu = UserFactor(this.ItemFactors, this.YtYiR, ci, state.Instance);
 
             return new RecommenderFeatures(xu, norm: null);
         }
@@ -319,19 +334,24 @@ namespace Implicit
                 return null;
             }
 
-            var yi = UserFactor(this.UserFactors, this.XtXiR, cu, this.alpha, state.Instance);
+            if (this.alpha != 1f)
+            {
+                cu.Multiply(this.alpha, cu);
+            }
+
+            var yi = UserFactor(this.UserFactors, this.XtXiR, cu, state.Instance);
 
             return new RecommenderFeatures(yi, norm: null);
         }
 
-        private static Vector<float> UserFactor(Matrix<float> y, Matrix<float> ytyir, Vector<float> ci, float alpha, FactorizationState s)
+        private static Vector<float> UserFactor(Matrix<float> y, Matrix<float> ytyir, Vector<float> ci, FactorizationState s)
         {
             ytyir.CopyTo(s.A);
             s.b.Clear();
 
             foreach (var (i, value) in ci.EnumerateIndexed(Zeros.AllowSkip))
             {
-                var confidence = alpha * value;
+                var confidence = value;
                 y.Row(i, s.yi);
 
                 if (confidence > 0)
@@ -356,10 +376,12 @@ namespace Implicit
             return s.A.Solve(s.b);
         }
 
-        private static void LeastSquares(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, float alpha)
+        private static void LeastSquares(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization)
         {
             var factors = x.ColumnCount;
-            var ytyir = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization));
+            var ytyir = y.TransposeThisAndMultiply(y);
+
+            ytyir.Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
 
             for (var u = 0; u < x.RowCount; u++)
             {
@@ -368,7 +390,7 @@ namespace Implicit
 
                 foreach (var (i, value) in cui.Row(u).EnumerateIndexed(Zeros.AllowSkip))
                 {
-                    var confidence = alpha * value;
+                    var confidence = value;
                     var yi = y.Row(i);
 
                     if (confidence > 0)
@@ -390,10 +412,12 @@ namespace Implicit
             }
         }
 
-        private static void LeastSquares(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, float alpha, ParallelOptions parallelOptions)
+        private static void LeastSquares(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
         {
             var factors = x.ColumnCount;
-            var ytyir = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization));
+            var ytyir = y.TransposeThisAndMultiply(y);
+
+            ytyir.Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
 
             Parallel.For(
                 0,
@@ -416,7 +440,7 @@ namespace Implicit
 
                     foreach (var (i, value) in s.ci.EnumerateIndexed(Zeros.AllowSkip))
                     {
-                        var confidence = alpha * value;
+                        var confidence = value;
                         y.Row(i, s.yi);
 
                         if (confidence > 0)
@@ -447,10 +471,12 @@ namespace Implicit
                 _ => { });
         }
 
-        private static void LeastSquaresConjugateGradient(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, float alpha, int steps)
+        private static void LeastSquaresConjugateGradient(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, int steps)
         {
             var factors = x.ColumnCount;
-            var ytyir = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization));
+            var ytyir = y.TransposeThisAndMultiply(y);
+
+            ytyir.Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
 
             for (var u = 0; u < x.RowCount; u++)
             {
@@ -459,7 +485,7 @@ namespace Implicit
 
                 foreach (var (i, value) in cui.Row(u).EnumerateIndexed(Zeros.AllowSkip))
                 {
-                    var confidence = alpha * value;
+                    var confidence = value;
                     var yi = y.Row(i);
 
                     if (confidence > 0)
@@ -488,7 +514,7 @@ namespace Implicit
 
                     foreach (var (i, value) in cui.Row(u).EnumerateIndexed(Zeros.AllowSkip))
                     {
-                        var confidence = alpha * value;
+                        var confidence = value;
                         var yi = y.Row(i);
 
                         if (confidence > 0)
@@ -523,10 +549,12 @@ namespace Implicit
             }
         }
 
-        private static void LeastSquaresConjugateGradient(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, float alpha, int steps, ParallelOptions parallelOptions)
+        private static void LeastSquaresConjugateGradient(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, int steps, ParallelOptions parallelOptions)
         {
             var factors = x.ColumnCount;
-            var ytyir = y.TransposeThisAndMultiply(y).Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization));
+            var ytyir = y.TransposeThisAndMultiply(y);
+
+            ytyir.Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
 
             Parallel.For(
                 0,
@@ -551,7 +579,7 @@ namespace Implicit
 
                     foreach (var (i, value) in s.ci.EnumerateIndexed(Zeros.AllowSkip))
                     {
-                        var confidence = alpha * value;
+                        var confidence = value;
                         y.Row(i, s.yi);
 
                         if (confidence > 0)
@@ -581,9 +609,9 @@ namespace Implicit
                     {
                         ytyir.Multiply(s.p, s.Ap);
 
-                        foreach (var (i, value) in cui.Row(u).EnumerateIndexed(Zeros.AllowSkip))
+                        foreach (var (i, value) in s.ci.EnumerateIndexed(Zeros.AllowSkip))
                         {
-                            var confidence = alpha * value;
+                            var confidence = value;
                             y.Row(i, s.yi);
 
                             if (confidence > 0)
@@ -625,7 +653,7 @@ namespace Implicit
                 _ => { });
         }
 
-        private static float CalculateLoss(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, float alpha)
+        private static float CalculateLoss(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization)
         {
             var nnz = 0;
             var loss = 0f;
@@ -642,7 +670,7 @@ namespace Implicit
 
                 foreach (var (i, value) in cui.Row(u).EnumerateIndexed(Zeros.AllowSkip))
                 {
-                    var confidence = alpha * value;
+                    var confidence = value;
                     var yi = y.Row(i);
 
                     var temp = 1f;
@@ -682,7 +710,7 @@ namespace Implicit
             return loss / (total_confidence + (y.RowCount * x.RowCount) - nnz);
         }
 
-        private static float CalculateLoss(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, float alpha, ParallelOptions parallelOptions)
+        private static float CalculateLoss(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
         {
             var factors = x.ColumnCount;
             var yty = y.TransposeThisAndMultiply(y);
@@ -718,7 +746,7 @@ namespace Implicit
 
                     foreach (var (i, value) in s.ci.EnumerateIndexed(Zeros.AllowSkip))
                     {
-                        var confidence = alpha * value;
+                        var confidence = value;
                         y.Row(i, s.yi);
 
                         var temp = 1f;

@@ -1,13 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
 using MathNet.Numerics;
-using MathNet.Numerics.Providers.MKL;
 
 namespace Implicit.Benchmark
 {
     [MemoryDiagnoser(false)]
     public class AlternatingLeastSquaresBenchmark
     {
-        private UserItemMatrix? data;
+        private UserItemMatrix data = default!;
 
         public enum ProviderId
         {
@@ -18,32 +17,39 @@ namespace Implicit.Benchmark
         [Params(64)]
         public int Factors { get; set; }
 
+        [Params(true)]
+        public bool UseConjugateGradient { get; set; }
+
         [Params(ProviderId.Managed, ProviderId.NativeMKL)]
         public ProviderId Provider { get; set; }
 
         [GlobalSetup]
         public void Setup()
         {
+            Control.MaxDegreeOfParallelism = 1;
+
             switch (this.Provider)
             {
                 case ProviderId.Managed:
                     Control.UseManaged();
                     break;
                 case ProviderId.NativeMKL:
-                    MklControl.UseNativeMKL(MklConsistency.Auto, MklPrecision.Single, MklAccuracy.High);
+                    Control.UseNativeMKL();
                     break;
             }
 
-            this.data = UserItemMatrix.Build(DataFactory.CreateCheckerBoard(n: 3_000));
+            this.data = UserItemMatrix.Build(DataFactory.CreateCheckerBoard(n: 1024));
         }
 
         [Benchmark(OperationsPerInvoke = 1)]
         public MatrixFactorizationRecommender FitModel()
         {
             var recommender = AlternatingLeastSquaresRecommender.Fit(
-                this.data!,
+                this.data,
                 new AlternatingLeastSquaresParameters(
-                    factors: this.Factors));
+                    factors: this.Factors,
+                    useConjugateGradient: this.UseConjugateGradient,
+                    random: new Random(42)));
 
             return recommender;
         }
