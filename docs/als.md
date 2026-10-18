@@ -84,9 +84,9 @@ The implementation divides its accumulated loss by:
 D = sum(observed u, i) abs(Alpha * value_ui) + U * I - nnz
 ```
 
-`nnz` counts enumerated nonzero interactions. For positive-only data, the numerator matches `E`. For negative observations, `CalculateLoss` adds a constant confidence term even though the preference is zero. Its reported value is therefore `(E + sum(negative observations) c_ui) / D`, rather than exactly `E / D`.
+`nnz` counts enumerated nonzero interactions. The reported loss is `E / D`, including the regularization term. Positive observations contribute `c_ui * (1 - prediction)^2`; negative observations contribute `c_ui * prediction^2`, because their target preference is zero. The constant term in the expanded squared error therefore applies only to positive observations. Both signs contribute their absolute confidence to `D`, while missing entries contribute one.
 
-That extra constant does not affect the training normal equations. It does affect interpretation and comparison of reported losses across datasets. Loss is not an offline ranking metric such as recall or NDCG. Large dimensions also require care: `U * I` is evaluated as an integer product before entering the floating-point expression.
+Loss is not an offline ranking metric such as recall or NDCG. Large dimensions also require care: `U * I` is evaluated as an integer product before entering the floating-point expression.
 
 ## Computational cost
 

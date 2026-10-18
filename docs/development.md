@@ -35,13 +35,14 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 ## Existing tests
 
-The concrete ALS test class inherits shared tests from two abstract base classes, yielding 12 cases per target. Eight weighting regression cases bring the total to 20 per target:
+The concrete ALS test class inherits shared tests from two abstract base classes, yielding 12 cases per target. Eight weighting cases and ten loss regression cases bring the total to 30 per target:
 
 | Source | Behavior exercised |
 | --- | --- |
 | [RecommenderTest](../src/Implicit.Tests/RecommenderTest.cs) | Held-out diagonal recommendations and parity-based user/item similarity. |
 | [MatrixFactorizationRecommenderTest](../src/Implicit.Tests/MatrixFactorizationRecommenderTest.cs) | Reconstructed-user ranking, user inference from one item, and custom feature similarity. |
 | [AlternatingLeastSquaresRecommenderTest](../src/Implicit.Tests/AlternatingLeastSquaresRecommenderTest.cs) | Four combinations of direct/CG solving and positive/negative input; model save/load ranking. |
+| [AlternatingLeastSquaresLossTest](../src/Implicit.Tests/AlternatingLeastSquaresLossTest.cs) | Reported loss against a direct objective calculation with missing entries, alpha scaling, regularization, direct/CG training, and one/two workers; zero loss for negative-only input. |
 | [WeightTest](../src/Implicit.Tests/WeightTest.cs) | TF-IDF and BM25 normalization of single rows and multiple users, expected numerical values, unchanged unknown items, and empty rows. |
 
 Most behavior tests use a 50-by-50 checkerboard with diagonal entries withheld. The factorization theory uses a small explicit matrix and rejects reconstruction errors above `1e-3f`. Seeded `Random(42)` sources stabilize training. The save/load test compares ordered IDs, not exact factor values or score equality.

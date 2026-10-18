@@ -678,6 +678,7 @@ namespace Implicit
                     if (confidence > 0)
                     {
                         temp = -2 * confidence;
+                        loss += confidence;
                     }
                     else
                     {
@@ -691,7 +692,6 @@ namespace Implicit
 
                     nnz += 1;
                     total_confidence += confidence;
-                    loss += confidence;
                 }
 
                 loss += r.DotProduct(xu);
@@ -754,6 +754,7 @@ namespace Implicit
                         if (confidence > 0)
                         {
                             temp = -2 * confidence;
+                            s.loss[0] += confidence;
                         }
                         else
                         {
@@ -768,7 +769,6 @@ namespace Implicit
 
                         s.nnz[0] += 1;
                         s.total_confidence[0] += confidence;
-                        s.loss[0] += confidence;
                     }
 
                     s.loss[0] += s.r.DotProduct(s.xu);
