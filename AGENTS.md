@@ -33,4 +33,10 @@ Use `*Test.cs` classes, `[Fact]` for individual cases, and `[Theory]` with `[Inl
 
 ## Commit & Pull Request Guidelines
 
+Make repository changes on a dedicated branch and merge them into `master` through a pull request. Do not commit or push directly to `master`. Use the `codex/` prefix for agent-created branches. Merge only after the required CI checks pass.
+
+Write repository documentation, code comments, commit messages, PR titles and descriptions, issue text, and release notes in English. Preserve language-specific test data and upstream content in their original language. Conversation with the user may follow the user's preferred language.
+
 Use short imperative commit subjects, such as `Support negative confidence values` or `Rename ObjectPool to ObjectPoolSlim`. Keep commits focused. PR descriptions should explain the behavior change, link relevant issues, and record validation commands and results. Include benchmark comparisons for performance changes and compatibility notes for public API changes.
+
+During 0.x releases, breaking public API changes are acceptable when they improve the design. Update all repository references, tests, and examples, and document the migration for consumers. Do not preserve an inconsistent API solely for backward compatibility.

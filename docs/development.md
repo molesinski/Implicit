@@ -33,6 +33,8 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 `--no-build` requires matching Release outputs to exist already. Generated `bin/`, `obj/`, `TestResults/`, `artifacts/`, and `BenchmarkDotNet.Artifacts/` directories are ignored by Git.
 
+Allocation checks have `[Trait("Category", "Performance")]` and remain part of the default test run. Use `--filter 'Category=Performance'` to run them alone, or `--filter 'Category!=Performance'` to exclude them during a focused functional check. The allocation check is available on .NET 8/9/10.
+
 ## Existing tests
 
 The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Eleven deterministic query scoring cases, fourteen feature inference cases, nine matrix construction and interaction aggregation cases, twenty weighting cases, twenty-four loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 111 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 112 cases each:
@@ -90,3 +92,5 @@ Pipeline versions use `0.7` plus a counter-derived patch value, passed consisten
 Follow `.editorconfig` and `.globalconfig`: four-space C# indentation, block-scoped namespaces, Allman braces, `var`, and `this.` qualification. Project/config files generally use two spaces. Preserve UTF-8 BOM and CRLF unless a file-specific override applies.
 
 Keep changes compatible with every library target. Use short imperative commit subjects matching the history, and explain behavior changes, compatibility effects, validation, and relevant performance measurements in pull requests. Update these documents when API semantics, binary layouts, target frameworks, or tooling change.
+
+Naming conventions, block-scoped namespaces, and required braces are enforced during builds through IDE1006, IDE0160, and IDE0011. Work on dedicated branches (`codex/` for agent-created branches) and merge into `master` through pull requests after required CI checks pass. Write repository content in English, preserving language-specific fixtures and upstream content. During 0.x releases, design improvements may include breaking API changes when repository references and migration guidance are updated together.
