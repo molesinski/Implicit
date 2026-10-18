@@ -35,12 +35,14 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 ## Existing tests
 
-The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Nine matrix construction and interaction aggregation cases, fifteen weighting cases, twenty-four loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 81 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 82 cases each:
+The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Eleven deterministic query scoring cases, fourteen feature inference cases, nine matrix construction and interaction aggregation cases, fifteen weighting cases, twenty-four loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 106 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 107 cases each:
 
 | Source | Behavior exercised |
 | --- | --- |
 | [RecommenderTest](../src/Implicit.Tests/RecommenderTest.cs) | Held-out diagonal recommendations and parity-based user/item similarity. |
 | [MatrixFactorizationRecommenderTest](../src/Implicit.Tests/MatrixFactorizationRecommenderTest.cs) | Reconstructed-user ranking, user inference from one item, and custom feature similarity. |
+| [MatrixFactorizationRecommenderScoreTest](../src/Implicit.Tests/MatrixFactorizationRecommenderScoreTest.cs) | Fixed-factor recommendation and similarity scores, ID/feature overloads, custom candidates, negative and zero scores, zero queries, and descending ordering without imposing tie order. |
+| [AlternatingLeastSquaresFeaturesTest](../src/Implicit.Tests/AlternatingLeastSquaresFeaturesTest.cs) | Both inference directions with empty/unknown/zero histories, ignored entries, mixed-sign duplicate aggregation, cancellation, analytical solutions, and history isolation across A-B-A calls. |
 | [AlternatingLeastSquaresRecommenderTest](../src/Implicit.Tests/AlternatingLeastSquaresRecommenderTest.cs) | Four combinations of direct/CG solving and positive/negative input; model save/load parameters, exact factors by ID, recommendation and similarity scores, and stream lifetime and position. |
 | [UserItemMatrixTest](../src/Implicit.Tests/UserItemMatrixTest.cs) | Both input formats, ID-to-value mappings, missing values, omitted zero-only users/items, duplicate aggregation, cancellation, and empty matrices. |
 | [UserItemValueExtensionsTest](../src/Implicit.Tests/UserItemValueExtensionsTest.cs) | Aggregation of signed duplicate interactions while preserving explicit zeros and cancelled totals. |
@@ -52,6 +54,8 @@ The concrete ALS test class inherits shared tests from two abstract base classes
 | [ObjectPoolSlimLeaseTest](../src/Implicit.Tests/ObjectPoolSlimLeaseTest.cs) | Default lease disposal and allocation-free retained leases after warmup on .NET 8/9/10. |
 
 Recommendation integration tests use a 50-by-50 checkerboard with diagonal entries withheld. The factorization theory uses a small explicit matrix and rejects reconstruction errors above `1e-3f`. Seeded `Random(42)` sources stabilize training. The save/load test uses fixed factors, nondefault parameters, a Unicode ID, and dictionary iteration orders different from matrix row orders. It compares factors by ID and complete query results, allowing internal row indices to change on load.
+
+Deterministic score tests use distinct user/item matrices and explicit expected scores; similarity normalizes only the candidate vector. Feature inference tests use different user/item populations and hand-solved two-factor systems with nondefault alpha and positive regularization. These tests use `1e-6` absolute tolerances, reject nonfinite results, and do not call private solver methods or inspect pool internals.
 
 Use `[Fact]` for individual cases and `[Theory]` for meaningful parameter combinations. New tests should cover externally observable behavior, numerical tolerances, and regressions. Dispose results after consuming any deferred LINQ queries, as the recommendation tests do with scoped `using` declarations. Result pool tests use a collection with parallelization disabled so that other test collections cannot interfere with shared pool identity assertions. There is no coverage collector or minimum percentage configured. See [Engineering considerations](engineering-notes.md) for uncovered areas.
 
