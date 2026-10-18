@@ -77,4 +77,6 @@ normalized(u, i) = tf(u, i) * idf(i)
 
 Frequent items can have negative IDF. Feeding those weights into ALS makes them zero-preference observations, which may differ from the intended meaning of frequent positive events. Review the sign distribution before training.
 
+BM25 leaves exact zero input values unchanged and retains their dictionary entries. It skips the term-frequency division for these entries, so zeros remain zero even with `k1 = 0`, `b = 1`, or zero average fitting length. Nonzero entries in the same row are still normalized.
+
 The constructor path rejects negative `k1` and `b`, but does not cap `b` at one or guard against nonfinite parameters, zero average length, or zero denominators. Empty fitting input fails when computing its average. BM25 computes the row sum before modifying any values, including entries whose IDs are unknown to the fitted transform.

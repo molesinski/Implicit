@@ -82,7 +82,64 @@ namespace Implicit.Tests
             Assert.Equal(3f, item.Value);
         }
 
-        private static Weight CreateWeight(bool useBM25)
+        [Theory]
+        [InlineData(100f, 1f, false)]
+        [InlineData(100f, 1f, true)]
+        [InlineData(0f, 0.8f, false)]
+        [InlineData(0f, 0.8f, true)]
+        [InlineData(0f, 1f, false)]
+        [InlineData(0f, 1f, true)]
+        public void NormalizeBM25ZeroWeights(float k1, float b, bool normalizeUsers)
+        {
+            var weight = CreateWeight(useBM25: true, k1: k1, b: b);
+            var zeroItems = new Dictionary<string, float> { ["a"] = 0f, ["b"] = 0f, ["unknown"] = 0f };
+            var mixedItems = new Dictionary<string, float> { ["a"] = 0f, ["b"] = 3f, ["unknown"] = 0f };
+
+            if (normalizeUsers)
+            {
+                var userItems = new Dictionary<string, Dictionary<string, float>>
+                {
+                    ["zero"] = zeroItems,
+                    ["mixed"] = mixedItems,
+                };
+
+                weight.Normalize(userItems);
+            }
+            else
+            {
+                weight.Normalize(zeroItems);
+                weight.Normalize(mixedItems);
+            }
+
+            Assert.Equal(ExpectedItemKeys, zeroItems.Keys.OrderBy(x => x, StringComparer.Ordinal));
+            Assert.All(zeroItems.Values, value => Assert.Equal(0f, value));
+            Assert.Equal(ExpectedItemKeys, mixedItems.Keys.OrderBy(x => x, StringComparer.Ordinal));
+            Assert.Equal(0f, mixedItems["a"]);
+            Assert.Equal(0f, mixedItems["unknown"]);
+
+            // b has IDF ln(0.6); with k1=100 and b=1 its term frequency is 303/78.
+            var expected = MathF.Log(0.6f) * (k1 == 0f ? 1f : 303f / 78f);
+            Assert.InRange(Math.Abs(mixedItems["b"] - expected), 0f, 1e-6f);
+        }
+
+        [Fact]
+        public void NormalizeBM25ZeroWeightsWithZeroAverageLength()
+        {
+            var fittingRows = new Dictionary<int, Dictionary<string, float>>
+            {
+                [0] = new Dictionary<string, float> { ["a"] = 0f },
+            };
+            var weight = BM25Weight.Fit(fittingRows);
+            var items = new Dictionary<string, float> { ["a"] = 0f };
+
+            weight.Normalize(items);
+
+            var item = Assert.Single(items);
+            Assert.Equal("a", item.Key);
+            Assert.Equal(0f, item.Value);
+        }
+
+        private static Weight CreateWeight(bool useBM25, float k1 = 2f, float b = 0.5f)
         {
             // Three fitting rows with average length 4; a occurs once and b twice.
             var userItems = new Dictionary<int, Dictionary<string, float>>
@@ -92,7 +149,7 @@ namespace Implicit.Tests
                 [2] = new Dictionary<string, float> { ["c"] = 3f },
             };
 
-            return useBM25 ? BM25Weight.Fit(userItems, k1: 2f, b: 0.5f) : TFIDFWeight.Fit(userItems);
+            return useBM25 ? BM25Weight.Fit(userItems, k1: k1, b: b) : TFIDFWeight.Fit(userItems);
         }
     }
 }

@@ -22,7 +22,7 @@ Weight fitting uses integer outer keys while model building uses string keys. Tr
 
 Both `Normalize` implementations use `NETSTANDARD2_0` conditional compilation to snapshot row entries before updating the dictionary in the build consumed by .NET Framework. The library has no direct .NET Framework target, so this compatibility path also applies to any other runtime consuming its `netstandard2.0` assembly. The `netstandard2.1` and .NET 8/9/10 builds enumerate the dictionary directly and avoid the temporary array. Regression tests exercise both transforms through the single-row and multi-user overloads on all test targets, including .NET Framework 4.7.2.
 
-BM25 can turn positive event counts into negative weights; ALS interprets those as zero preference. Empty fitting data, zero average length, and nonfinite normalization results also need caller handling. See [Data and weighting](data-and-weighting.md) before adopting either transform.
+BM25 can turn positive event counts into negative weights; ALS interprets those as zero preference. Exact zero inputs are preserved without evaluating the term-frequency division, including when `k1 = 0`, `b = 1`, or average fitting length is zero. Empty fitting data and nonfinite normalization results for nonzero inputs still need caller handling. See [Data and weighting](data-and-weighting.md) before adopting either transform.
 
 ## Pool and result ownership
 
@@ -44,7 +44,7 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 65 cases on .NET Framework and 66 on each modern .NET target cover core recommendation behavior, small-matrix factorization, high-confidence direct training and feature inference, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Factorization tests explicitly reject NaN and infinity; high-confidence regressions also compare factors against an analytical solution. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
+The existing 72 cases on .NET Framework and 73 on each modern .NET target cover core recommendation behavior, small-matrix factorization, high-confidence direct training and feature inference, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Factorization tests explicitly reject NaN and infinity; high-confidence regressions also compare factors against an analytical solution. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and mixed-sign or duplicate input to `ComputeUserFeatures` and `ComputeItemFeatures`.

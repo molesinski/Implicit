@@ -115,6 +115,12 @@ namespace Implicit.Weights
             foreach (var item in items)
 #endif
             {
+                // Preserve absent interactions even when the BM25 denominator is zero or NaN.
+                if (item.Value == 0f)
+                {
+                    continue;
+                }
+
                 if (this.idf.TryGetValue(item.Key, out var idf))
                 {
                     var tf = item.Value;
