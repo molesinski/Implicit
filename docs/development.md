@@ -73,6 +73,10 @@ Setup sets MathNet's `Control.MaxDegreeOfParallelism` to one. This does not set 
 
 The benchmark enables memory diagnostics and GitHub Markdown export. Keep runtime, provider, processor, and concurrency settings with performance comparisons. Use representative datasets and separate serving benchmarks before drawing conclusions about production throughput.
 
+The [README's ALS training results](../README.md#als-training-results) record the 2026-10-18 run at commit `453c635`, including environment, provider versions, workload parameters, and the exact reproduction command. Both providers completed the default BenchmarkDotNet job: managed averaged 919.4 ms with 218.67 MB allocated, and MKL averaged 752.0 ms with 135.02 MB allocated per complete training operation. Allocations cover managed memory only; native MKL memory is excluded.
+
+The run retained 15 managed measurements and 14 MKL measurements after BenchmarkDotNet excluded one upper MKL outlier. The local generated report is `artifacts/readme-benchmarks-2026-10-18/results/Implicit.Benchmark.AlternatingLeastSquaresBenchmark-report-github.md`, with the measurement log alongside the `results/` directory. Generated artifacts remain ignored by Git. Keep the default job for comparable measurements; reduced warmup or iteration counts change the measurement procedure.
+
 ## Packaging and pipeline
 
 To build a local package without publishing:

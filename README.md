@@ -3,11 +3,11 @@
 [![CI](https://github.com/molesinski/Implicit/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/molesinski/Implicit/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/dt/implicit.svg)](https://www.nuget.org/packages/implicit)
 [![NuGet](https://img.shields.io/nuget/v/implicit.svg)](https://www.nuget.org/packages/implicit)
-[![License](https://img.shields.io/github/license/molesinski/implicit.svg)](https://github.com/molesinski/implicit/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/molesinski/Implicit.svg)](https://github.com/molesinski/Implicit/blob/master/LICENSE)
 
 Fast .NET collaborative filtering for implicit feedback datasets.
 
-Developer documentation: [getting started, architecture, API, and implementation notes](docs/README.md).
+Developer documentation: [getting started, architecture, API, and implementation notes](https://github.com/molesinski/Implicit/blob/master/docs/README.md).
 
 ## Highlights
 
@@ -44,7 +44,7 @@ The library targets .NET Standard 2.0/2.1 and .NET 8/9/10. The .NET Standard 2.0
 .NET Framework consumers; the repository tests it on .NET Framework 4.7.2.
 
 The examples below use modern C# and the API in this checkout. To try unreleased changes, reference
-[src/Implicit/Implicit.csproj](src/Implicit/Implicit.csproj) from a console application instead of using
+[src/Implicit/Implicit.csproj](https://github.com/molesinski/Implicit/blob/master/src/Implicit/Implicit.csproj) from a console application instead of using
 the published package. Use the `Implicit` namespace for models and `Implicit.Weights` for preprocessing.
 
 ## A Quick Example
@@ -116,7 +116,7 @@ produces confidence `20`. Negative observations target zero, not minus one. For 
 dislike can be represented by a negative value with a deliberately chosen magnitude.
 
 Choose an event aggregation policy before training, and validate finite values and meaningful IDs in
-your application. See [data and weighting](docs/data-and-weighting.md) for duplicate cancellation,
+your application. See [data and weighting](https://github.com/molesinski/Implicit/blob/master/docs/data-and-weighting.md) for duplicate cancellation,
 zero entries, and preprocessing details.
 
 ## Training Configuration
@@ -163,7 +163,7 @@ Supply a cancellation token through `ParallelOptions.CancellationToken` to abort
 A random seed stabilizes initialization, but numerical providers and parallel execution can affect
 floating-point results. Treat trained or loaded models as fixed snapshots: publicly exposed maps and
 factor matrices are mutable, but changing them does not invalidate cached norms or Gram matrices.
-See [ALS implementation](docs/als.md) for the objective and solver behavior.
+See [ALS implementation](https://github.com/molesinski/Implicit/blob/master/docs/als.md) for the objective and solver behavior.
 
 ## Recommendations and Similarity
 
@@ -193,7 +193,7 @@ using (var similar = model.SimilarItems("book-a"))
 Recommendation scores are user/item dot products. Similarity scores divide the dot product by the
 candidate's norm only. For a fixed nonzero query this preserves cosine-similarity ordering, but scores
 are scaled by the query norm and need not fall between minus one and one. Equal-score ordering is
-unspecified. See [API behavior](docs/api.md) for scoring and query contracts.
+unspecified. See [API behavior](https://github.com/molesinski/Implicit/blob/master/docs/api.md) for scoring and query contracts.
 
 ### New Users and Items
 
@@ -273,7 +273,7 @@ Review that behavior against your event semantics before using it.
 Retain the fitted transform for inference and normalize new histories once before calling
 `weightedModel.ComputeUserFeatures`. Unknown items are left unchanged by normalization. Both transforms
 support `Save(Stream)` and their own static `Load(Stream)` methods; save them separately from the model.
-See [data and weighting](docs/data-and-weighting.md) for formulas and edge cases.
+See [data and weighting](https://github.com/molesinski/Implicit/blob/master/docs/data-and-weighting.md) for formulas and edge cases.
 
 ## Saving and Loading Models
 
@@ -299,14 +299,14 @@ weighting transforms, or training configuration. Streams remain open and are rea
 current position; rewind a `MemoryStream` before loading from it.
 
 The binary format has no version header or integrity check. Load trusted model artifacts and retain
-the producing library version and preprocessing settings alongside them. See [binary persistence](docs/persistence.md)
+the producing library version and preprocessing settings alongside them. See [binary persistence](https://github.com/molesinski/Implicit/blob/master/docs/persistence.md)
 for the format and compatibility constraints.
 
 ## Performance and Benchmarks
 
 Training uses MathNet.Numerics and parallel row updates. MathNet's native providers can accelerate
 linear algebra; the repository benchmark compares its managed provider with native Intel MKL on
-Windows x64. See the [benchmark configuration](docs/development.md#benchmarks) for provider setup.
+Windows x64. See the [benchmark configuration](https://github.com/molesinski/Implicit/blob/master/docs/development.md#benchmarks) for provider setup.
 
 Queries score and sort the full candidate population before application filters or `Take(k)` run.
 Taking ten results therefore does not reduce scoring work. Factor matrices contain roughly
@@ -317,15 +317,47 @@ Result lists are pooled to reduce repeated buffer allocation. Pool misses, large
 and result wrapper objects still allocate. Dispose results promptly to make their lists available
 for reuse; retained lists keep their capacity after clearing.
 
-Run the included training benchmarks from the repository root:
+### ALS training results
 
-```shell
-dotnet run --project src/Implicit.Benchmark/Implicit.Benchmark.csproj -c Release -- --filter '*AlternatingLeastSquares*'
+Measured on 2026-10-18 at commit `453c635`, using BenchmarkDotNet's default job in Release
+configuration. Each operation trains a complete model on a synthetic 1024-by-1024 checkerboard with
+523,264 interactions, 64 factors, 15 iterations, and 3 CG steps per row update. Training uses
+`alpha = 1`, `regularization = 0.01`, `Random(42)`, and no loss calculation. Input construction occurs
+outside the timed operation; factor initialization is included.
+
+MathNet's `Control.MaxDegreeOfParallelism` is set to 1. ALS retains its default `ParallelOptions`
+and performs parallel row updates, so this is a parallel training benchmark. MathNet.Numerics is
+version `5.0.0`; the native provider package is `MathNet.Numerics.MKL.Win-x64` `3.0.0`, reporting
+Intel MKL 2022.0 (x64, provider revision 15).
+
+```text
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26300.9711)
+Intel Core i9-14900K 3.20GHz, 1 CPU, 32 logical and 24 physical cores
+.NET SDK 10.0.402
+  [Host]     : .NET 10.0.13 (10.0.13, 10.0.1326.50504), X64 RyuJIT x86-64-v3
+  DefaultJob : .NET 10.0.13 (10.0.13, 10.0.1326.50504), X64 RyuJIT x86-64-v3
+GC: Concurrent Workstation
 ```
 
-The workload uses a synthetic 1024-by-1024 interaction matrix, 64 factors, and CG training. It measures
-fitting time and allocations, not recommendation latency or relevance. Benchmark representative data
-and record the runtime, numerical provider, and concurrency settings when comparing results.
+| Provider | Mean | Error | StdDev | Allocated |
+| --- | ---: | ---: | ---: | ---: |
+| Managed | 919.4 ms | 12.50 ms | 11.70 ms | 218.67 MB |
+| NativeMKL | 752.0 ms | 5.19 ms | 4.60 ms | 135.02 MB |
+
+`Error` is half of the 99.9% confidence interval; `StdDev` is the standard deviation. `Allocated`
+measures managed allocations per complete training operation (1 MB = 1,048,576 bytes), excluding
+native MKL allocations. These values do not represent peak process memory.
+
+To reproduce both measurements from the repository root:
+
+```shell
+dotnet run --project src/Implicit.Benchmark/Implicit.Benchmark.csproj -c Release -- --filter '*AlternatingLeastSquares*' --artifacts artifacts/readme-benchmarks-2026-10-18
+```
+
+MKL reduced mean training time by approximately 18% and managed allocations by 38% in this run.
+Results depend on hardware, runtime, concurrency, and data. The workload is roughly half dense and
+measures CG training time and allocations; benchmark representative data separately when assessing
+recommendation latency, relevance, or production capacity.
 
 ## Development
 
@@ -341,9 +373,9 @@ The full test matrix requires Windows with .NET Framework 4.7.2-compatible execu
 runtimes. For a focused run, use
 `dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0`.
 
-See the [contributor guide](AGENTS.md) for coding conventions and
-[development and testing](docs/development.md) for packaging, analyzers, and benchmark workflows.
-The [developer documentation](docs/README.md) also covers architecture and implementation constraints.
+See the [contributor guide](https://github.com/molesinski/Implicit/blob/master/AGENTS.md) for coding conventions and
+[development and testing](https://github.com/molesinski/Implicit/blob/master/docs/development.md) for packaging, analyzers, and benchmark workflows.
+The [developer documentation](https://github.com/molesinski/Implicit/blob/master/docs/README.md) also covers architecture and implementation constraints.
 
 ## Based On and Planned Work
 
@@ -361,4 +393,4 @@ Previously listed planned algorithms remain unimplemented:
 
 ## License
 
-- Implicit, [MIT License](LICENSE)
+- Implicit, [MIT License](https://github.com/molesinski/Implicit/blob/master/LICENSE)
