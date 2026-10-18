@@ -67,9 +67,17 @@ namespace Implicit
 
             var storage = StoragePool.Lease();
 
-            builder(storage.Instance);
+            try
+            {
+                builder(storage.Instance);
 
-            return new RecommenderResult(storage);
+                return new RecommenderResult(storage);
+            }
+            catch
+            {
+                storage.Dispose();
+                throw;
+            }
         }
 
         public Enumerator GetEnumerator()

@@ -73,4 +73,4 @@ For a pooled result, accessing `Count`, its indexer, or obtaining an enumerator 
 
 `Dispose` on the result object is idempotent. The shared `Empty` result has no pool lease and remains readable after disposal. Always using a `using` scope handles both cases correctly.
 
-The public `RecommenderResult.Create(builder)` invokes a callback with a mutable list. The callback is responsible for ordering and must not retain the list reference. If it throws, the current implementation does not return the acquired list to the pool.
+The public `RecommenderResult.Create(builder)` invokes a callback with a mutable list. The callback is responsible for ordering and must not retain the list reference. If it throws, `Create` releases the lease, clearing and returning the list to the pool, then rethrows the original exception. On success, the result owns the lease until it is disposed.

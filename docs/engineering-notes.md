@@ -30,7 +30,7 @@ BM25 can turn positive event counts into negative weights; ALS interprets those 
 
 [`ObjectPoolSlimLease`](../src/Implicit/Utils/ObjectPoolSlimLease.cs) is a public readonly struct. Copying a lease and disposing both copies, or disposing the same lease twice, can return one instance multiple times. Use one lexical `using` owner per lease. `RecommenderResult` adds its own idempotent-disposal guard; the raw lease does not.
 
-If a `RecommenderResult.Create` builder throws, the acquired list is not returned. Holding pooled results indefinitely also prevents reuse, and a returned list retains its capacity after clearing. A pool containing large result lists can therefore retain substantial memory.
+If a `RecommenderResult.Create` builder throws, the factory releases the lease and rethrows the original exception. The list is cleared before it can be reused. On success, ownership transfers to the result until disposal. Holding pooled results indefinitely prevents reuse, and a returned list retains its capacity after clearing. A pool containing large result lists can therefore retain substantial memory.
 
 Existing enumerators do not detect owner disposal. Never share or enumerate a result after disposal, including through deferred LINQ queries. These ownership cases are not covered by the current tests.
 
@@ -42,12 +42,12 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 32 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, and weighting normalization. Useful additions for future functional changes include:
+The existing 35 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, and result pool ownership. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.
 - Numerical similarity scores, not just ranking or parity groups.
-- Result disposal, deferred enumeration, builder exceptions, and pool lease ownership.
+- Access after result disposal, deferred enumeration, and raw pool lease ownership; builder exceptions and successful result ownership already have regression coverage.
 - Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
 - Iteration numbering, cancellation, callback exceptions, and numerical precision with large confidence sums.
 - Corrupt or truncated persistence data, score/factor round trips, and cross-version fixtures.
