@@ -5,7 +5,7 @@
     {
         private const int DegreeOfParallelism = 5;
 
-        private readonly Item[] items;
+        private readonly Item?[] items;
         private readonly Func<TItem> factory;
         private readonly Action<TItem> resetter;
 
@@ -28,33 +28,31 @@
 
         public ObjectPoolSlimLease<TItem> Lease()
         {
-            var instance = default(TItem);
-
             for (var i = 0; i < this.items.Length; i++)
             {
-                instance = this.items[i].Value;
+                var item = this.items[i];
 
-                if (instance is not null)
+                if (item is not null)
                 {
-                    if (instance == Interlocked.CompareExchange(ref this.items[i].Value!, null, instance))
+                    if (item == Interlocked.CompareExchange(ref this.items[i], null, item))
                     {
-                        return new ObjectPoolSlimLease<TItem>(this, instance);
+                        return new ObjectPoolSlimLease<TItem>(item);
                     }
                 }
             }
 
-            return new ObjectPoolSlimLease<TItem>(this, this.factory());
+            return new ObjectPoolSlimLease<TItem>(new Item(this, this.factory()));
         }
 
-        internal void Return(TItem instance)
+        private void Return(Item item)
         {
-            this.resetter(instance);
+            this.resetter(item.Instance);
 
             for (var i = 0; i < this.items.Length; i++)
             {
-                if (this.items[i].Value is null)
+                if (this.items[i] is null)
                 {
-                    if (Interlocked.CompareExchange(ref this.items[i].Value!, instance, null) is null)
+                    if (Interlocked.CompareExchange(ref this.items[i], item, null) is null)
                     {
                         break;
                     }
@@ -62,9 +60,32 @@
             }
         }
 
-        private struct Item
+        internal sealed class Item
         {
-            public TItem Value;
+            private readonly ObjectPoolSlim<TItem> pool;
+            private long version;
+
+            internal Item(ObjectPoolSlim<TItem> pool, TItem instance)
+            {
+                this.pool = pool;
+                this.Instance = instance;
+            }
+
+            internal TItem Instance { get; }
+
+            internal long NextLeaseVersion()
+            {
+                // Odd versions are leased; the following even version marks a completed return.
+                return Interlocked.Increment(ref this.version);
+            }
+
+            internal void Return(long leaseVersion)
+            {
+                if (Interlocked.CompareExchange(ref this.version, unchecked(leaseVersion + 1), leaseVersion) == leaseVersion)
+                {
+                    this.pool.Return(this);
+                }
+            }
         }
     }
 }

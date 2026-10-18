@@ -28,7 +28,9 @@ BM25 can turn positive event counts into negative weights; ALS interprets those 
 
 [`ObjectPoolSlim`](../src/Implicit/Utils/ObjectPoolSlim.cs) uses atomic compare-and-exchange operations for both acquisition and return. After resetting an object, a return claims an empty slot only if it is still empty; a competing return cannot overwrite the retained object. If another thread wins that slot, the return continues scanning. A full pool still discards excess returns after resetting them. Retention capacity does not limit the number of simultaneously leased objects.
 
-[`ObjectPoolSlimLease`](../src/Implicit/Utils/ObjectPoolSlimLease.cs) is a public readonly struct. Copying a lease and disposing both copies, or disposing the same lease twice, can return one instance multiple times. Use one lexical `using` owner per lease. `RecommenderResult` adds its own idempotent-disposal guard; the raw lease does not.
+[`ObjectPoolSlimLease`](../src/Implicit/Utils/ObjectPoolSlimLease.cs) remains a public readonly struct. Copies, including boxed copies, share metadata with a lease version. `Dispose` atomically closes that version before resetting and returning the object, so repeated or concurrent disposal returns it at most once. A stale copy cannot close a later lease of the same object. Disposing a default lease is a no-op. If the resetter throws, the exception propagates, the object is not republished, and later disposal attempts do not retry the reset.
+
+Use one lexical `using` owner per lease and do not use `Instance` after any copy is disposed. The property still exposes the underlying reference; idempotent disposal does not protect against access through stale references. The metadata is reused with retained objects, avoiding a new shared-state allocation on each lease.
 
 If a `RecommenderResult.Create` builder throws, the factory releases the lease and rethrows the original exception. The list is cleared before it can be reused. On success, ownership transfers to the result until disposal. Holding pooled results indefinitely prevents reuse, and a returned list retains its capacity after clearing. A pool containing large result lists can therefore retain substantial memory.
 
@@ -42,12 +44,12 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 38 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership, and concurrent pool returns. Useful additions for future functional changes include:
+The existing 45 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership, concurrent pool returns, and copied lease disposal. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.
 - Numerical similarity scores, not just ranking or parity groups.
-- Access after result disposal, deferred enumeration, and raw pool lease ownership; builder exceptions and successful result ownership already have regression coverage.
+- Access after result disposal and deferred enumeration; builder exceptions, successful result ownership, and copied lease disposal already have regression coverage.
 - Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
 - Iteration numbering, cancellation, callback exceptions, and numerical precision with large confidence sums.
 - Corrupt or truncated persistence data, score/factor round trips, and cross-version fixtures.

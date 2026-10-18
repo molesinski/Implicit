@@ -51,6 +51,8 @@ Training runs one `Parallel.For` over users, then another over items. Each loop 
 
 Inference uses a per-model `ObjectPoolSlim<FactorizationState>`; result lists use a static pool. Each pool has `Environment.ProcessorCount * 5` retention slots, allocates when none are available, and discards returns when full. Retention slots are not a concurrency limit.
 
+Each pooled object has a shared metadata object containing its owner and a 64-bit lease version. A lease remains a readonly struct holding that metadata reference and its version. Copies share one return state, while later leases receive different versions. Metadata is allocated when a new pooled object is created and reused with that object; ordinary unboxed leasing of retained objects adds no per-lease managed allocation.
+
 Norm and Gram matrix caches initialize lazily without explicit synchronization. The pool uses atomic compare-and-exchange operations to acquire and return objects. A return resets the object before publishing it and continues to the next slot if another return claims the same slot first. Pool synchronization does not establish a general thread-safety guarantee for mutable models or shared result instances. Keep model state unchanged, give each request its own result lifetime, and validate concurrent serving behavior for your workload.
 
 See [Engineering considerations](engineering-notes.md) before changing cache or pool ownership.
