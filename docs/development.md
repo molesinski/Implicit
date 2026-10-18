@@ -1,4 +1,4 @@
-﻿# Development and Testing
+# Development and Testing
 
 Use the repository's SDK and analyzer configuration when changing the library. [`AGENTS.md`](../AGENTS.md) contains the concise contribution guide; this chapter explains the build matrix, test coverage, benchmark workload, and packaging flow.
 
@@ -89,7 +89,7 @@ Pipeline versions use `0.7` plus a counter-derived patch value, passed consisten
 
 ## Style and contributions
 
-Follow `.editorconfig` and `.globalconfig`: four-space C# indentation, block-scoped namespaces, Allman braces, `var`, and `this.` qualification. Project/config files generally use two spaces. Preserve UTF-8 BOM and CRLF unless a file-specific override applies.
+Follow `.editorconfig` and `.globalconfig`: four-space C# indentation, block-scoped namespaces, Allman braces, `var`, and `this.` qualification. Project/config files generally use two spaces. Use UTF-8 without BOM and LF line endings. `.gitattributes` enforces LF for text files in every checkout.
 
 Keep changes compatible with every library target. Use short imperative commit subjects matching the history, and explain behavior changes, compatibility effects, validation, and relevant performance measurements in pull requests. Update these documents when API semantics, binary layouts, target frameworks, or tooling change.
 

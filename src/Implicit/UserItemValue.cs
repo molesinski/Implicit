@@ -1,4 +1,4 @@
-﻿namespace Implicit
+namespace Implicit
 {
     public readonly record struct UserItemValue
     {

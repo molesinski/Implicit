@@ -1,4 +1,4 @@
-﻿# Getting Started
+# Getting Started
 
 This example trains a small model, filters already observed items, computes a temporary user profile, and saves and reloads the model. Its tiny dataset demonstrates API usage rather than recommendation quality.
 

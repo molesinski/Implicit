@@ -1,4 +1,4 @@
-﻿using MathNet.Numerics.Random;
+using MathNet.Numerics.Random;
 
 namespace Implicit
 {

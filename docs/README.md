@@ -1,4 +1,4 @@
-﻿# Implicit Developer Documentation
+# Implicit Developer Documentation
 
 Implicit is a C# library for collaborative filtering from implicit feedback. It learns dense user and item factors with alternating least squares (ALS), then uses those factors for recommendations, similarity queries, and inference from new interaction histories.
 

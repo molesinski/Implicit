@@ -1,4 +1,4 @@
-﻿namespace Implicit.Utils
+namespace Implicit.Utils
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "Not intended to be used directly for comparison")]
     public readonly struct ObjectPoolSlimLease<TItem> : IDisposable

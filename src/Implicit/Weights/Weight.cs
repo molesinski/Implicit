@@ -1,4 +1,4 @@
-﻿namespace Implicit.Weights
+namespace Implicit.Weights
 {
     public abstract class Weight
     {

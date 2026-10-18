@@ -1,4 +1,4 @@
-﻿# API Behavior
+# API Behavior
 
 The public API operates on identifier maps and dense factors. The main implementation is in [MatrixFactorizationRecommender](../src/Implicit/MatrixFactorizationRecommender.cs), with fitting and inference in [AlternatingLeastSquaresRecommender](../src/Implicit/AlternatingLeastSquaresRecommender.cs).
 

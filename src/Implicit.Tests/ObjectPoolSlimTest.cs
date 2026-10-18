@@ -1,4 +1,4 @@
-﻿using Implicit.Utils;
+using Implicit.Utils;
 using Xunit;
 
 namespace Implicit.Tests

@@ -1,4 +1,4 @@
-﻿# Engineering Considerations
+# Engineering Considerations
 
 These constraints follow from the current implementation and matter when extending or integrating the library. They describe existing behavior, not changes already implemented.
 

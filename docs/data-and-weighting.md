@@ -1,4 +1,4 @@
-﻿# Data and Weighting
+# Data and Weighting
 
 Training input associates a string user ID, a string item ID, and a single-precision value. The sign expresses preference; the magnitude becomes confidence after scaling by `Alpha`.
 

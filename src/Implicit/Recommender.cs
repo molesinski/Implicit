@@ -1,4 +1,4 @@
-﻿namespace Implicit
+namespace Implicit
 {
     public abstract class Recommender
     {

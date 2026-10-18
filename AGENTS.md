@@ -1,4 +1,4 @@
-﻿# Repository Guidelines
+# Repository Guidelines
 
 ## Project Structure & Module Organization
 
@@ -23,7 +23,7 @@ Run commands from the repository root. Use the SDK selected by `global.json` (10
 
 ## Coding Style & Naming Conventions
 
-Follow `.editorconfig`: four-space C# indentation, two-space project/configuration indentation, CRLF endings, and UTF-8 BOM unless overridden. Use block-scoped namespaces, Allman braces, `var`, and `this.` for instance members. Use PascalCase for types and methods, camelCase for parameters and private fields, and an `I` prefix for interfaces. Match filenames to their primary types.
+Follow `.editorconfig`: four-space C# indentation, two-space project/configuration indentation, LF endings, and UTF-8 without BOM. Use block-scoped namespaces, Allman braces, `var`, and `this.` for instance members. Use PascalCase for types and methods, camelCase for parameters and private fields, and an `I` prefix for interfaces. Match filenames to their primary types.
 
 Nullable references, .NET analyzers, and StyleCop are enabled; warnings fail builds. Keep changes compatible with the library's .NET Standard 2.0/2.1 and .NET 8/9/10 targets.
 

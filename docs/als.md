@@ -1,4 +1,4 @@
-﻿# ALS Implementation
+# ALS Implementation
 
 [`AlternatingLeastSquaresRecommender`](../src/Implicit/AlternatingLeastSquaresRecommender.cs) factorizes implicit feedback into dense user factors `X` and item factors `Y`. Training alternately holds one matrix fixed and solves for rows of the other.
 

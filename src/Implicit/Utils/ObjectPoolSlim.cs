@@ -1,4 +1,4 @@
-﻿namespace Implicit.Utils
+namespace Implicit.Utils
 {
     public sealed class ObjectPoolSlim<TItem>
         where TItem : class

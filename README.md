@@ -1,4 +1,4 @@
-﻿# Implicit
+# Implicit
 
 [![CI](https://dev.azure.com/molesinski/implicit/_apis/build/status/implicit?branchName=master)](https://dev.azure.com/molesinski/implicit/_build/latest?definitionId=1&branchName=master)
 [![NuGet](https://img.shields.io/nuget/dt/implicit.svg)](https://www.nuget.org/packages/implicit)

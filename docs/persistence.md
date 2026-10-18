@@ -1,4 +1,4 @@
-﻿# Binary Persistence
+# Binary Persistence
 
 ALS models and weighting transforms have separate `Save(Stream)` and static `Load(Stream)` methods. They use .NET `BinaryWriter` and `BinaryReader` with UTF-8 encoding and `leaveOpen: true`.
 

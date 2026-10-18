@@ -1,4 +1,4 @@
-﻿using Implicit.Weights;
+using Implicit.Weights;
 using Xunit;
 
 namespace Implicit.Tests

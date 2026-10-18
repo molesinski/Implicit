@@ -1,4 +1,4 @@
-﻿# Architecture
+# Architecture
 
 The library separates interaction preparation, latent factor training, and querying. Interaction data and model factors use `float` through MathNet.Numerics. The direct ALS solver and temporary feature inference form and solve their normal equations in `double`, then return factors in `float`.
 
