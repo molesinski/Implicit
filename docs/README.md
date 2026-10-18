@@ -21,6 +21,6 @@ Start with the example when integrating the library. Read architecture and ALS b
 
 ALS is the only concrete recommender. TF-IDF and BM25 are preprocessing utilities, not separate recommendation algorithms. Bayesian Personalized Ranking and standalone item-neighbor models are listed as planned work in the [repository README](../README.md).
 
-The library uses single-precision MathNet matrices. It contains no HTTP server, database adapter, application configuration system, or built-in recommendation evaluation pipeline. Applications own data acquisition, filtering, deployment, and relevance evaluation.
+The library stores model factors in single-precision MathNet matrices and uses double-precision working matrices for direct ALS solves. It contains no HTTP server, database adapter, application configuration system, or built-in recommendation evaluation pipeline. Applications own data acquisition, filtering, deployment, and relevance evaluation.
 
 For contribution conventions, see [Repository Guidelines](../AGENTS.md). Each technical chapter links to the relevant implementation files.

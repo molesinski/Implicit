@@ -36,11 +36,11 @@ There is no public warm-start overload, incremental model update, validation-bas
 
 ## Solver choices
 
-The direct solver explicitly forms `A_u` and calls MathNet's `Solve`; it does not explicitly select a Cholesky decomposition. The conjugate gradient (CG) solver starts from the current factor row and computes matrix-vector products without constructing every row's full coefficient matrix. CG stops after the requested number of steps or when the squared residual drops below `1e-20f`.
+The direct solver explicitly forms `A_u` and calls MathNet's `Solve`; it does not explicitly select a Cholesky decomposition. It converts fixed factors to `double` before computing the Gram matrix, confidence corrections, and solution, then stores the solved factors as `float`. This reduces loss of regularization from rounding at large confidence values. The conjugate gradient (CG) solver uses `float`, starts from the current factor row, and computes matrix-vector products without constructing every row's full coefficient matrix. CG stops after the requested number of steps or when the squared residual drops below `1e-20f`.
 
 `Fit` uses the overloads taking `ParallelOptions`. Sequential private overloads also exist, but are not selected by `Fit`. Setting `MaxDegreeOfParallelism = 1` still uses the parallel overload with one worker.
 
-Temporary feature inference always uses the direct solver, regardless of the training solver. It caches the fixed-side regularized Gram matrix and reuses pooled scratch storage.
+Temporary feature inference always uses the direct solver, regardless of the training solver. It caches the fixed-side regularized Gram matrix and reuses pooled scratch storage in `double`, returning feature vectors in `float`.
 
 ## Parameter reference
 
@@ -92,4 +92,4 @@ Both loss implementations calculate `U * I` as a 64-bit integer product before c
 
 With `F` factors and `N` nonzero interactions, each half-iteration computes a fixed-side Gram matrix. Direct row updates add approximately `O(N F^2)` outer-product work plus `O(rows * F^3)` solves. With `K` CG steps, row updates cost approximately `O((K + 1) * (rows * F^2 + N F))`. These are operation estimates, not measured benchmark results.
 
-Dense factor storage contains `(U + I) * F` floats, approximately `4 * (U + I) * F` bytes before matrix and object overhead. Training additionally holds sparse input and transpose data plus worker-local buffers. See [Development and testing](development.md) for the benchmark configuration.
+Dense factor storage contains `(U + I) * F` floats, approximately `4 * (U + I) * F` bytes before matrix and object overhead. Training additionally holds sparse input and transpose data plus worker-local buffers. Each direct half-iteration also allocates a double-precision copy of the fixed factor matrix; its Gram matrix and solver buffers use eight bytes per value instead of four. The public API and binary model format remain single precision. See [Development and testing](development.md) for the benchmark configuration.

@@ -11,8 +11,8 @@ namespace Implicit
         private readonly ObjectPoolSlim<FactorizationState> factorizationStatePool;
         private readonly float regularization;
         private readonly float alpha;
-        private Matrix<float>? xtxir;
-        private Matrix<float>? ytyir;
+        private Matrix<double>? xtxir;
+        private Matrix<double>? ytyir;
 
         public AlternatingLeastSquaresRecommender(
             int factors,
@@ -56,16 +56,16 @@ namespace Implicit
             }
         }
 
-        private Matrix<float> XtXiR
+        private Matrix<double> XtXiR
         {
             get
             {
                 if (this.xtxir is null)
                 {
-                    var x = this.UserFactors;
+                    var x = this.UserFactors.ToDouble();
                     var xtxir = x.TransposeThisAndMultiply(x);
 
-                    xtxir.Add(Matrix<float>.Build.DiagonalIdentity(x.ColumnCount).Multiply(this.regularization), xtxir);
+                    xtxir.Add(Matrix<double>.Build.DiagonalIdentity(x.ColumnCount).Multiply(this.regularization), xtxir);
 
                     this.xtxir = xtxir;
                 }
@@ -74,16 +74,16 @@ namespace Implicit
             }
         }
 
-        private Matrix<float> YtYiR
+        private Matrix<double> YtYiR
         {
             get
             {
                 if (this.ytyir is null)
                 {
-                    var y = this.ItemFactors;
+                    var y = this.ItemFactors.ToDouble();
                     var ytyir = y.TransposeThisAndMultiply(y);
 
-                    ytyir.Add(Matrix<float>.Build.DiagonalIdentity(y.ColumnCount).Multiply(this.regularization), ytyir);
+                    ytyir.Add(Matrix<double>.Build.DiagonalIdentity(y.ColumnCount).Multiply(this.regularization), ytyir);
 
                     this.ytyir = ytyir;
                 }
@@ -343,15 +343,16 @@ namespace Implicit
             return new RecommenderFeatures(yi, norm: null);
         }
 
-        private static Vector<float> UserFactor(Matrix<float> y, Matrix<float> ytyir, Vector<float> ci, FactorizationState s)
+        private static Vector<float> UserFactor(Matrix<float> y, Matrix<double> ytyir, Vector<float> ci, FactorizationState s)
         {
             ytyir.CopyTo(s.A);
             s.b.Clear();
 
             foreach (var (i, value) in ci.EnumerateIndexed(Zeros.AllowSkip))
             {
-                var confidence = value;
-                y.Row(i, s.yi);
+                var confidence = (double)value;
+                y.Row(i, s.yiSingle);
+                s.yiSingle.MapConvert(value => (double)value, s.yi);
 
                 if (confidence > 0)
                 {
@@ -372,25 +373,28 @@ namespace Implicit
                 }
             }
 
-            return s.A.Solve(s.b);
+            return s.A.Solve(s.b).ToSingle();
         }
 
         private static void LeastSquares(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization)
         {
             var factors = x.ColumnCount;
-            var ytyir = y.TransposeThisAndMultiply(y);
 
-            ytyir.Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
+            // Convert before forming the normal equations so confidence updates retain regularization.
+            var yDouble = y.ToDouble();
+            var ytyir = yDouble.TransposeThisAndMultiply(yDouble);
+
+            ytyir.Add(Matrix<double>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
 
             for (var u = 0; u < x.RowCount; u++)
             {
                 var a = ytyir.Clone();
-                var b = Vector<float>.Build.Dense(factors);
+                var b = Vector<double>.Build.Dense(factors);
 
                 foreach (var (i, value) in cui.Row(u).EnumerateIndexed(Zeros.AllowSkip))
                 {
-                    var confidence = value;
-                    var yi = y.Row(i);
+                    var confidence = (double)value;
+                    var yi = yDouble.Row(i);
 
                     if (confidence > 0)
                     {
@@ -407,16 +411,19 @@ namespace Implicit
 
                 var xu = a.Solve(b);
 
-                x.SetRow(u, xu);
+                x.SetRow(u, xu.ToSingle());
             }
         }
 
         private static void LeastSquares(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
         {
             var factors = x.ColumnCount;
-            var ytyir = y.TransposeThisAndMultiply(y);
 
-            ytyir.Add(Matrix<float>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
+            // Conversion after the Gram matrix or outer products would preserve float rounding errors.
+            var yDouble = y.ToDouble();
+            var ytyir = yDouble.TransposeThisAndMultiply(yDouble);
+
+            ytyir.Add(Matrix<double>.Build.DiagonalIdentity(factors).Multiply(regularization), ytyir);
 
             Parallel.For(
                 0,
@@ -426,10 +433,11 @@ namespace Implicit
                 {
                     ci = Vector<float>.Build.Sparse(cui.ColumnCount),
                     xu = Vector<float>.Build.Dense(factors),
-                    yi = Vector<float>.Build.Dense(factors),
-                    A = Matrix<float>.Build.Dense(factors, factors),
-                    b = Vector<float>.Build.Dense(factors),
-                    op = Matrix<float>.Build.Dense(factors, factors),
+                    solution = Vector<double>.Build.Dense(factors),
+                    yi = Vector<double>.Build.Dense(factors),
+                    A = Matrix<double>.Build.Dense(factors, factors),
+                    b = Vector<double>.Build.Dense(factors),
+                    op = Matrix<double>.Build.Dense(factors, factors),
                 },
                 (u, _, s) =>
                 {
@@ -439,8 +447,8 @@ namespace Implicit
 
                     foreach (var (i, value) in s.ci.EnumerateIndexed(Zeros.AllowSkip))
                     {
-                        var confidence = value;
-                        y.Row(i, s.yi);
+                        var confidence = (double)value;
+                        yDouble.Row(i, s.yi);
 
                         if (confidence > 0)
                         {
@@ -461,7 +469,8 @@ namespace Implicit
                         }
                     }
 
-                    s.A.Solve(s.b, s.xu);
+                    s.A.Solve(s.b, s.solution);
+                    s.solution.MapConvert(value => (float)value, s.xu);
 
                     x.SetRow(u, s.xu);
 
@@ -828,23 +837,26 @@ namespace Implicit
             {
                 this.cu = Vector<float>.Build.Sparse(users);
                 this.ci = Vector<float>.Build.Sparse(items);
-                this.yi = Vector<float>.Build.Dense(factors);
-                this.A = Matrix<float>.Build.Dense(factors, factors);
-                this.b = Vector<float>.Build.Dense(factors);
-                this.op = Matrix<float>.Build.Dense(factors, factors);
+                this.yiSingle = Vector<float>.Build.Dense(factors);
+                this.yi = Vector<double>.Build.Dense(factors);
+                this.A = Matrix<double>.Build.Dense(factors, factors);
+                this.b = Vector<double>.Build.Dense(factors);
+                this.op = Matrix<double>.Build.Dense(factors, factors);
             }
 
             public Vector<float> cu { get; }
 
             public Vector<float> ci { get; }
 
-            public Vector<float> yi { get; }
+            public Vector<float> yiSingle { get; }
 
-            public Matrix<float> A { get; }
+            public Vector<double> yi { get; }
 
-            public Vector<float> b { get; }
+            public Matrix<double> A { get; }
 
-            public Matrix<float> op { get; }
+            public Vector<double> b { get; }
+
+            public Matrix<double> op { get; }
         }
     }
 }

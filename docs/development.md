@@ -35,7 +35,7 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 ## Existing tests
 
-The concrete ALS test class inherits shared tests from two abstract base classes, yielding 12 cases per target. Eight weighting cases, twelve loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 47 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 48 cases each:
+The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Eight weighting cases, twelve loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 53 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 54 cases each:
 
 | Source | Behavior exercised |
 | --- | --- |

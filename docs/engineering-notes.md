@@ -44,10 +44,10 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 47 cases on .NET Framework and 48 on each modern .NET target cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
+The existing 53 cases on .NET Framework and 54 on each modern .NET target cover core recommendation behavior, small-matrix factorization, high-confidence direct training and feature inference, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Factorization tests explicitly reject NaN and infinity; high-confidence regressions also compare factors against an analytical solution. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
-- Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.
+- Unknown-ID behavior and mixed-sign or duplicate input to `ComputeUserFeatures` and `ComputeItemFeatures`.
 - Numerical similarity scores, not just ranking or parity groups.
 - Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
 - Iteration numbering, cancellation, callback exceptions, and numerical precision with large confidence sums.
