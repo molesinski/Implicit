@@ -8,7 +8,7 @@ Implicit is a .NET collaborative filtering library built on MathNet.Numerics. `I
 - `src/Implicit.Tests/`: xUnit tests and shared recommender test bases.
 - `src/Implicit.Benchmark/`: BenchmarkDotNet performance tests and generated datasets.
 
-Shared compiler and analyzer settings live in `Directory.Build.props`, `Directory.Build.targets`, `.editorconfig`, and `.globalconfig`. NuGet metadata lives in `Package.props`; GitHub Actions CI is in `.github/workflows/ci.yml`, with shared build and package validation scripts under `tools/`.
+Shared compiler and analyzer settings live in `Directory.Build.props`, `Directory.Build.targets`, `.editorconfig`, and `.globalconfig`. NuGet metadata lives in `Package.props`; GitHub Actions CI and releases are in `.github/workflows/`, with shared build and package validation scripts under `tools/`. See `docs/github-actions-and-releases.md` for publishing configuration and recovery.
 
 ## Build, Test, and Development Commands
 

@@ -13,6 +13,7 @@ Implicit is a C# library for collaborative filtering from implicit feedback. It 
 | [API behavior](api.md) | Use feature inference and ranking APIs correctly, including result lifetimes. |
 | [Persistence](persistence.md) | Read the binary layouts and understand what a saved model preserves. |
 | [Development and testing](development.md) | Build all targets, run tests and benchmarks, and understand the release pipeline. |
+| [GitHub Actions and releases](github-actions-and-releases.md) | Configure Trusted Publishing, release from version tags, and recover failed publications. |
 | [Engineering considerations](engineering-notes.md) | Review implementation constraints, test gaps, and changes that require special care. |
 
 Start with the example when integrating the library. Read architecture and ALS before modifying training. Consult API behavior and persistence before building a serving layer.

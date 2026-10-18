@@ -95,7 +95,9 @@ To run the same process locally, use PowerShell 7 from the repository root:
 pwsh ./tools/Build-Packages.ps1 -Version 0.0.0-ci -ArtifactDirectory artifacts/local-ci
 ```
 
-Choose a fresh artifact directory for each run. The script rejects a nonempty package directory so stale packages cannot pass validation. Local runs record `HEAD` as the repository commit; commit changes first when producing an artifact that must correspond exactly to a commit. The former Azure pipeline and its counter-based versioning have been removed; automated publishing will be configured separately.
+Choose a fresh artifact directory for each run. The script rejects a nonempty package directory so stale packages cannot pass validation. Local runs record `HEAD` as the repository commit; commit changes first when producing an artifact that must correspond exactly to a commit.
+
+The [release workflow](../.github/workflows/release.yml) uses a `v*` tag as the version source, checks that its commit belongs to `master` and its version is unused, then runs the same build script. A separate publish job revalidates the downloaded artifact and obtains a temporary NuGet key using Trusted Publishing. See [GitHub Actions and releases](github-actions-and-releases.md) for environment configuration, tag rules, and recovery instructions.
 
 ## Style and contributions
 
