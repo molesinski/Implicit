@@ -7,6 +7,10 @@
 
 Fast .NET Collaborative Filtering for implicit Datasets.
 
+## Developer documentation
+
+See the [developer documentation](docs/README.md) for a complete usage example, architecture, ALS internals, API behavior, binary formats, and development workflows.
+
 ## Based on
 
 This project is based on Python library [Implicit](https://github.com/benfred/implicit) by [Ben Frederickson](https://github.com/benfred).
