@@ -139,6 +139,107 @@ namespace Implicit.Tests
             Assert.Equal(0f, item.Value);
         }
 
+        [Theory]
+        [InlineData(false, 0.5f, 2.1972246f, 1.2163953f, 0.4054651f)]
+        [InlineData(true, 0.5f, 0.61299074f, -0.76623845f, -0.6811008f)]
+        [InlineData(true, 1f, 0.5108256f, -0.6567758f, -1.0216512f)]
+        public void SaveLoad(bool useBM25, float b, float expectedA, float expectedB, float expectedC)
+        {
+            var original = CreateWeight(useBM25, k1: 2f, b: b);
+            var restored = RoundTrip(original, useBM25);
+            var rows = new Dictionary<string, float>[]
+            {
+                new() { ["a"] = 2f, ["b"] = 3f, ["c"] = 0f, ["unknown"] = 3f, ["unknown-zero"] = 0f },
+                new() { ["a"] = 0f, ["c"] = 1f, ["unknown"] = 0f },
+                new() { ["a"] = 0f, ["b"] = 0f, ["c"] = 0f, ["unknown"] = 0f },
+                new() { ["unknown"] = 7f },
+                new(),
+            };
+            var expectedRows = new Dictionary<string, float>[]
+            {
+                new() { ["a"] = expectedA, ["b"] = expectedB, ["c"] = 0f, ["unknown"] = 3f, ["unknown-zero"] = 0f },
+                new() { ["a"] = 0f, ["c"] = expectedC, ["unknown"] = 0f },
+                new() { ["a"] = 0f, ["b"] = 0f, ["c"] = 0f, ["unknown"] = 0f },
+                new() { ["unknown"] = 7f },
+                new(),
+            };
+
+            // Distinct row lengths exercise both BM25 parameters and the saved average length (4).
+            for (var i = 0; i < rows.Length; i++)
+            {
+                var before = new Dictionary<string, float>(rows[i]);
+                var after = new Dictionary<string, float>(rows[i]);
+                original.Normalize(before);
+                restored.Normalize(after);
+
+                Assert.Equal(expectedRows[i].Keys.OrderBy(x => x, StringComparer.Ordinal), after.Keys.OrderBy(x => x, StringComparer.Ordinal));
+                foreach (var expected in expectedRows[i])
+                {
+                    var actual = after[expected.Key];
+                    Assert.False(float.IsNaN(actual));
+                    Assert.False(float.IsInfinity(actual));
+                    Assert.Equal(before[expected.Key], actual);
+                    if (expected.Value == 0f || expected.Key.StartsWith("unknown", StringComparison.Ordinal))
+                    {
+                        Assert.Equal(expected.Value, actual);
+                    }
+                    else
+                    {
+                        Assert.InRange(Math.Abs(expected.Value - actual), 0f, 1e-6f);
+                    }
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void SaveLoadZeroWeightsWithZeroAverageLength(bool useBM25)
+        {
+            var fittingRows = new Dictionary<int, Dictionary<string, float>>
+            {
+                [0] = new Dictionary<string, float> { ["a"] = 0f },
+            };
+            Weight original = useBM25 ? BM25Weight.Fit(fittingRows, k1: 2f, b: 1f) : TFIDFWeight.Fit(fittingRows);
+            var restored = RoundTrip(original, useBM25);
+            var before = new Dictionary<string, float> { ["a"] = 0f, ["unknown"] = 0f };
+            var after = new Dictionary<string, float>(before);
+
+            original.Normalize(before);
+            restored.Normalize(after);
+
+            Assert.Equal(before.Count, after.Count);
+            foreach (var item in before)
+            {
+                Assert.Equal(0f, item.Value);
+                Assert.Equal(0f, after[item.Key]);
+            }
+        }
+
+        private static Weight RoundTrip(Weight original, bool useBM25)
+        {
+            using var stream = new MemoryStream();
+            stream.WriteByte(42);
+            var start = stream.Position;
+
+            original.Save(stream);
+
+            Assert.True(stream.CanRead);
+            Assert.True(stream.CanWrite);
+            var end = stream.Position;
+            Assert.True(end > start);
+            stream.Position = start;
+
+            Weight restored = useBM25 ? BM25Weight.Load(stream) : TFIDFWeight.Load(stream);
+
+            Assert.True(stream.CanRead);
+            Assert.True(stream.CanWrite);
+            Assert.Equal(end, stream.Position);
+            stream.Position = 0;
+            Assert.Equal(42, stream.ReadByte());
+            return restored;
+        }
+
         private static Weight CreateWeight(bool useBM25, float k1 = 2f, float b = 0.5f)
         {
             // Three fitting rows with average length 4; a occurs once and b twice.

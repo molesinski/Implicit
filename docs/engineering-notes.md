@@ -44,11 +44,11 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 106 cases on .NET Framework and 107 on each modern .NET target cover matrix construction and aggregation, core recommendation behavior, deterministic query scores, small-matrix factorization, high-confidence direct training, feature inference edge cases and history isolation, ALS loss reporting, weighting normalization, model persistence, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Numerical tests explicitly reject NaN and infinity; inference regressions also compare factors against analytical solutions. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
+The existing 111 cases on .NET Framework and 112 on each modern .NET target cover matrix construction and aggregation, core recommendation behavior, deterministic query scores, small-matrix factorization, high-confidence direct training, feature inference edge cases and history isolation, ALS loss reporting, weighting normalization and persistence, model persistence, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Numerical tests explicitly reject NaN and infinity; inference regressions also compare factors against analytical solutions. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
 
 - Invalid interaction values and explicit behavior for training on empty data.
 - Unknown-ID behavior in lookup-based queries and null-argument handling.
-- Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
+- Weight fitting edge cases beyond zero average length; normalization and save/load of known, unknown, zero, and empty rows already have regression coverage on every supported runtime.
 - Iteration numbering, cancellation, callback exceptions, and numerical precision with large confidence sums.
 - Corrupt or truncated persistence data and cross-version fixtures.
 - Concurrent inference and cache initialization on an unchanged model.

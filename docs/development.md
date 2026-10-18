@@ -35,7 +35,7 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 ## Existing tests
 
-The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Eleven deterministic query scoring cases, fourteen feature inference cases, nine matrix construction and interaction aggregation cases, fifteen weighting cases, twenty-four loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 106 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 107 cases each:
+The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Eleven deterministic query scoring cases, fourteen feature inference cases, nine matrix construction and interaction aggregation cases, twenty weighting cases, twenty-four loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 111 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 112 cases each:
 
 | Source | Behavior exercised |
 | --- | --- |
@@ -47,7 +47,7 @@ The concrete ALS test class inherits shared tests from two abstract base classes
 | [UserItemMatrixTest](../src/Implicit.Tests/UserItemMatrixTest.cs) | Both input formats, ID-to-value mappings, missing values, omitted zero-only users/items, duplicate aggregation, cancellation, and empty matrices. |
 | [UserItemValueExtensionsTest](../src/Implicit.Tests/UserItemValueExtensionsTest.cs) | Aggregation of signed duplicate interactions while preserving explicit zeros and cancelled totals. |
 | [AlternatingLeastSquaresLossTest](../src/Implicit.Tests/AlternatingLeastSquaresLossTest.cs) | Reported loss against an independent objective calculation, including missing entries, alpha scaling, regularization, direct/CG training, one/two workers, negative-only input, and pair counts exceeding the 32-bit integer range. |
-| [WeightTest](../src/Implicit.Tests/WeightTest.cs) | TF-IDF and BM25 normalization of single rows and multiple users, expected numerical values, unchanged unknown items, empty rows, and preservation of zero BM25 weights with boundary parameters and zero average fitting length. |
+| [WeightTest](../src/Implicit.Tests/WeightTest.cs) | TF-IDF and BM25 normalization of single rows and multiple users, expected numerical values, unchanged unknown items, empty rows, and preservation of zero BM25 weights with boundary parameters and zero average fitting length; save/load equivalence with nondefault BM25 parameters, known and unknown items, zeros, and stream lifetime and position. |
 | [RecommenderResultTest](../src/Implicit.Tests/RecommenderResultTest.cs) | Pool reuse and clearing after builder exceptions, original exception identity, and storage ownership until successful result disposal. |
 | [RecommenderResultEnumeratorTest](../src/Implicit.Tests/RecommenderResultEnumeratorTest.cs) | Enumerator lifetime checks before/after pool reuse, copies and interfaces, disposal at different iteration stages, deferred LINQ, live iteration/reset, and shared empty results. |
 | [ObjectPoolSlimTest](../src/Implicit.Tests/ObjectPoolSlimTest.cs) | Synchronized concurrent returns with four workers, retained instance identity and reset counts, and clearing before reuse. |
