@@ -83,9 +83,19 @@ dotnet pack src/Implicit/Implicit.csproj -c Release -o artifacts/packages
 
 [`Package.props`](../Package.props) supplies metadata and includes the root README and license in the package. Documentation under `docs/` is repository content and is not currently included in the NuGet package.
 
-[`azure-pipelines.yml`](../azure-pipelines.yml) uses `windows-latest`, installs .NET 8/9 runtimes and the SDK from `global.json`, restores and builds the library and tests, runs tests, publishes TRX results, packs, and pushes through the `Implicit` NuGet service connection. The YAML sets both `trigger: none` and `pr: none`; automatic push/PR runs are not enabled there. It does not build or run benchmarks.
+The [GitHub Actions CI workflow](../.github/workflows/ci.yml) runs on pushes and pull requests targeting `master`, and on manual dispatch. It uses `windows-latest`, the SDK from `global.json`, and additional .NET 8/9 SDKs for their runtimes. It builds the complete solution, runs all four test targets including allocation checks, and creates one validated `Implicit` package at version `0.0.0-ci`. Benchmarks are built but not run.
 
-Pipeline versions use `0.7` plus a counter-derived patch value, passed consistently to build, test, and pack. Running that pipeline includes a publication step; local `dotnet pack` only creates files.
+The workflow has read-only repository permissions, disables persisted checkout credentials, and pins actions to commit SHAs. New runs cancel older runs for the same ref. TRX results are uploaded even when tests fail; successful builds also upload the inspection package. Both artifacts are retained for 14 days. CI does not publish to NuGet or create releases.
+
+The shared [build script](../tools/Build-Packages.ps1) passes the same version, repository commit, and `ContinuousIntegrationBuild=true` to restore, build, test, and pack. The [package validator](../tools/Test-Packages.ps1) requires exactly one correctly named package, checks its nuspec identity, version, repository URL and commit, and verifies the five library targets, README and MIT license metadata and files.
+
+To run the same process locally, use PowerShell 7 from the repository root:
+
+```powershell
+pwsh ./tools/Build-Packages.ps1 -Version 0.0.0-ci -ArtifactDirectory artifacts/local-ci
+```
+
+Choose a fresh artifact directory for each run. The script rejects a nonempty package directory so stale packages cannot pass validation. Local runs record `HEAD` as the repository commit; commit changes first when producing an artifact that must correspond exactly to a commit. The former Azure pipeline and its counter-based versioning have been removed; automated publishing will be configured separately.
 
 ## Style and contributions
 

@@ -1,6 +1,6 @@
 # Implicit
 
-[![CI](https://dev.azure.com/molesinski/implicit/_apis/build/status/implicit?branchName=master)](https://dev.azure.com/molesinski/implicit/_build/latest?definitionId=1&branchName=master)
+[![CI](https://github.com/molesinski/Implicit/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/molesinski/Implicit/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/dt/implicit.svg)](https://www.nuget.org/packages/implicit)
 [![NuGet](https://img.shields.io/nuget/v/implicit.svg)](https://www.nuget.org/packages/implicit)
 [![License](https://img.shields.io/github/license/molesinski/implicit.svg)](https://github.com/molesinski/implicit/blob/master/LICENSE)

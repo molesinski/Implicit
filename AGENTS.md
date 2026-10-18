@@ -8,7 +8,7 @@ Implicit is a .NET collaborative filtering library built on MathNet.Numerics. `I
 - `src/Implicit.Tests/`: xUnit tests and shared recommender test bases.
 - `src/Implicit.Benchmark/`: BenchmarkDotNet performance tests and generated datasets.
 
-Shared compiler and analyzer settings live in `Directory.Build.props`, `Directory.Build.targets`, `.editorconfig`, and `.globalconfig`. NuGet metadata lives in `Package.props`; Azure Pipelines configuration is in `azure-pipelines.yml`.
+Shared compiler and analyzer settings live in `Directory.Build.props`, `Directory.Build.targets`, `.editorconfig`, and `.globalconfig`. NuGet metadata lives in `Package.props`; GitHub Actions CI is in `.github/workflows/ci.yml`, with shared build and package validation scripts under `tools/`.
 
 ## Build, Test, and Development Commands
 
@@ -20,6 +20,7 @@ Run commands from the repository root. Use the SDK selected by `global.json` (10
 - `dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0`: run only .NET 10 tests during development.
 - `dotnet run --project src/Implicit.Benchmark/Implicit.Benchmark.csproj -c Release -- --filter '*AlternatingLeastSquares*'`: run ALS benchmarks, including the Windows x64 native MKL provider.
 - `dotnet pack src/Implicit/Implicit.csproj -c Release`: create the NuGet package locally.
+- `pwsh ./tools/Build-Packages.ps1 -Version 0.0.0-ci -ArtifactDirectory artifacts/local-ci`: run the CI build, all test targets, packaging, and package validation locally. Use a fresh output directory; this command does not publish.
 
 ## Coding Style & Naming Conventions
 
