@@ -86,7 +86,7 @@ D = sum(observed u, i) abs(Alpha * value_ui) + U * I - nnz
 
 `nnz` counts enumerated nonzero interactions. The reported loss is `E / D`, including the regularization term. Positive observations contribute `c_ui * (1 - prediction)^2`; negative observations contribute `c_ui * prediction^2`, because their target preference is zero. The constant term in the expanded squared error therefore applies only to positive observations. Both signs contribute their absolute confidence to `D`, while missing entries contribute one.
 
-Loss is not an offline ranking metric such as recall or NDCG. Large dimensions also require care: `U * I` is evaluated as an integer product before entering the floating-point expression.
+Both loss implementations calculate `U * I` as a 64-bit integer product before combining it with the floating-point confidence sum. This avoids 32-bit integer overflow when the number of user/item pairs exceeds `Int32.MaxValue`; the final normalization still uses single-precision arithmetic. Loss is not an offline ranking metric such as recall or NDCG.
 
 ## Computational cost
 

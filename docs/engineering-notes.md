@@ -12,7 +12,7 @@ Treat a trained or loaded model as a fixed snapshot. A future supported update A
 
 Training expects finite values with a deliberate sign interpretation. Parameter guards do not reject NaN or infinity, and interaction records have no numerical validation. Zero regularization can leave direct systems singular; CG does not explicitly guard a zero or nonfinite `p.DotProduct(Ap)` denominator.
 
-`CalculateLoss` treats negative observations as zero preference and includes their absolute confidence in the normalization denominator. Regression tests compare the reported loss against a direct evaluation of the regularized objective for positive, mixed-sign, and negative-only input. Its dimension product `U * I` still uses integer arithmetic and can overflow for large catalogs; see the formula in [ALS implementation](als.md).
+`CalculateLoss` treats negative observations as zero preference and includes their absolute confidence in the normalization denominator. Regression tests compare the reported loss against a direct evaluation of the regularized objective for positive, mixed-sign, and negative-only input. Both loss implementations multiply dimensions in 64-bit integer arithmetic to prevent `U * I` from overflowing a 32-bit integer. Sparse diagonal regression cases cover 46,341 and 65,536 users and items without allocating a dense interaction matrix; see the formula in [ALS implementation](als.md).
 
 The direct and CG implementations each have sequential and parallel private overloads. `Fit` selects the parallel ones. Keep equivalent formulas aligned if maintaining the unused overloads, or assess removing duplication in a separate code change.
 
@@ -42,14 +42,14 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 30 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, and weighting normalization. Useful additions for future functional changes include:
+The existing 32 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, and weighting normalization. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.
 - Numerical similarity scores, not just ranking or parity groups.
 - Result disposal, deferred enumeration, builder exceptions, and pool lease ownership.
 - Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
-- Iteration numbering, cancellation, callback exceptions, and loss reporting for very large dimensions.
+- Iteration numbering, cancellation, callback exceptions, and numerical precision with large confidence sums.
 - Corrupt or truncated persistence data, score/factor round trips, and cross-version fixtures.
 - Concurrent inference and cache initialization on an unchanged model.
 

@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Globalization;
+using Xunit;
 
 namespace Implicit.Tests
 {
@@ -66,6 +67,59 @@ namespace Implicit.Tests
 
             Assert.NotNull(reportedLoss);
             Assert.InRange(Math.Abs(reportedLoss.GetValueOrDefault()), 0f, 1e-6f);
+        }
+
+        [Theory]
+        [InlineData(46341)]
+        [InlineData(65536)]
+        public void ReportedLossHandlesLargePairCounts(int dimension)
+        {
+            // A sparse diagonal keeps storage linear while the number of pairs exceeds Int32.MaxValue.
+            var interactions = Enumerable.Range(0, dimension).Select(index =>
+            {
+                var id = index.ToString(CultureInfo.InvariantCulture);
+                return new UserItemValue(id, id, 1f);
+            });
+            var parameters = new AlternatingLeastSquaresParameters(
+                factors: 1,
+                regularization: 0.1f,
+                iterations: 1,
+                useConjugateGradient: false,
+                calculateLossAtIteration: true,
+                parallelOptions: new ParallelOptions { MaxDegreeOfParallelism = 1 },
+                random: new Random(42));
+            float? reportedLoss = null;
+            parameters.OnIterationCompleted = context => reportedLoss = context.Loss;
+
+            var model = AlternatingLeastSquaresRecommender.Fit(UserItemMatrix.Build(interactions), parameters);
+            var userSquaredNorm = 0d;
+            var itemSquaredNorm = 0d;
+            var observedSquaredError = 0d;
+            var observedSquaredPredictions = 0d;
+
+            for (var index = 0; index < dimension; index++)
+            {
+                var userFactor = (double)model.UserFactors[index, 0];
+                var itemFactor = (double)model.ItemFactors[index, 0];
+                var prediction = userFactor * itemFactor;
+                var error = 1d - prediction;
+
+                userSquaredNorm += userFactor * userFactor;
+                itemSquaredNorm += itemFactor * itemFactor;
+                observedSquaredError += error * error;
+                observedSquaredPredictions += prediction * prediction;
+            }
+
+            // With one factor, the product of squared norms sums squared predictions over all pairs.
+            var missingSquaredError = (userSquaredNorm * itemSquaredNorm) - observedSquaredPredictions;
+            var penalty = parameters.Regularization * (userSquaredNorm + itemSquaredNorm);
+            var pairCount = (long)dimension * dimension;
+            var expected = (observedSquaredError + missingSquaredError + penalty) / pairCount;
+
+            Assert.True(pairCount > int.MaxValue);
+            Assert.NotNull(reportedLoss);
+            Assert.True(reportedLoss.GetValueOrDefault() > 0f);
+            Assert.InRange(Math.Abs((reportedLoss.GetValueOrDefault() / expected) - 1d), 0d, 1e-4d);
         }
 
         private static double CalculateObjective(UserItemMatrix input, AlternatingLeastSquaresRecommender model)

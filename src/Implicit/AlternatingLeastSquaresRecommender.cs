@@ -707,7 +707,9 @@ namespace Implicit
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + (y.RowCount * x.RowCount) - nnz);
+            var pairCount = (long)y.RowCount * x.RowCount;
+
+            return loss / (total_confidence + pairCount - nnz);
         }
 
         private static float CalculateLoss(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
@@ -814,7 +816,9 @@ namespace Implicit
 
             loss += regularization * (item_norm + user_norm);
 
-            return loss / (total_confidence + (y.RowCount * x.RowCount) - nnz);
+            var pairCount = (long)y.RowCount * x.RowCount;
+
+            return loss / (total_confidence + pairCount - nnz);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "By design")]
