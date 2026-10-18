@@ -49,7 +49,7 @@ weight.Normalize(userItems);
 var matrix = UserItemMatrix.Build(userItems);
 ```
 
-This fragment needs `System.Linq`. `Fit` computes statistics without normalizing the dictionaries. `Normalize` mutates values in place; clone nested dictionaries first if original values must be retained. Applying normalization twice applies the transform twice. Unknown item IDs are left unchanged.
+This fragment needs `System.Linq`. `Fit` computes statistics without normalizing the dictionaries. `Normalize` mutates values in place; clone nested dictionaries first if original values must be retained. In the `netstandard2.0` build, both transforms snapshot the row entries for .NET Framework compatibility. Other builds iterate the dictionary directly without allocating that array. Applying normalization twice applies the transform twice. Unknown item IDs are left unchanged.
 
 Both weight implementations count dictionary entries when computing document frequency, including zero-valued entries. Remove unwanted zero entries before fitting statistics. Neither transform is automatically invoked by ALS, stored in the ALS model, or reapplied during inference.
 
@@ -77,4 +77,4 @@ normalized(u, i) = tf(u, i) * idf(i)
 
 Frequent items can have negative IDF. Feeding those weights into ALS makes them zero-preference observations, which may differ from the intended meaning of frequent positive events. Review the sign distribution before training.
 
-The constructor path rejects negative `k1` and `b`, but does not cap `b` at one or guard against nonfinite parameters, zero average length, or zero denominators. Empty fitting input fails when computing its average. Weight normalization overwrites entries while enumerating the dictionary; compatibility with older runtimes needs attention as described in [Engineering considerations](engineering-notes.md).
+The constructor path rejects negative `k1` and `b`, but does not cap `b` at one or guard against nonfinite parameters, zero average length, or zero denominators. Empty fitting input fails when computing its average. BM25 computes the row sum before modifying any values, including entries whose IDs are unknown to the fitted transform.

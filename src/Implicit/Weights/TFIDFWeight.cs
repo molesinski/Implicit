@@ -77,7 +77,12 @@ namespace Implicit.Weights
                 throw new ArgumentNullException(nameof(items));
             }
 
+#if NETSTANDARD2_0
+            // Updating dictionary values invalidates its enumerator on .NET Framework.
+            foreach (var item in items.ToArray())
+#else
             foreach (var item in items)
+#endif
             {
                 if (this.idf.TryGetValue(item.Key, out var idf))
                 {

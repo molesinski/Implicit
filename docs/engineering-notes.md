@@ -20,7 +20,7 @@ The direct and CG implementations each have sequential and parallel private over
 
 Weight fitting uses integer outer keys while model building uses string keys. Treat the conversion as an explicit API boundary.
 
-Both `Normalize` implementations enumerate a dictionary while assigning new values to existing entries. This works on modern .NET, but overwriting a matched entry invalidates enumeration on .NET Framework and causes `InvalidOperationException` on the next enumerator advance. The project targets .NET Framework through its `netstandard2.0` library, while existing tests do not exercise normalization there. A compatible implementation would need a stable key snapshot or a separate update pass.
+Both `Normalize` implementations use `NETSTANDARD2_0` conditional compilation to snapshot row entries before updating the dictionary in the build consumed by .NET Framework. The library has no direct .NET Framework target, so this compatibility path also applies to any other runtime consuming its `netstandard2.0` assembly. The `netstandard2.1` and .NET 8/9/10 builds enumerate the dictionary directly and avoid the temporary array. Regression tests exercise both transforms through the single-row and multi-user overloads on all test targets, including .NET Framework 4.7.2.
 
 BM25 can turn positive event counts into negative weights; ALS interprets those as zero preference. Empty fitting data, zero average length, and nonfinite normalization results also need caller handling. See [Data and weighting](data-and-weighting.md) before adopting either transform.
 
@@ -42,13 +42,13 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 12 cases per framework cover core recommendation behavior and small-matrix factorization. Useful additions for future functional changes include:
+The existing 20 cases per framework cover core recommendation behavior, small-matrix factorization, and weighting normalization. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.
 - Numerical similarity scores, not just ranking or parity groups.
 - Result disposal, deferred enumeration, builder exceptions, and pool lease ownership.
-- Weight fitting, normalization, and persistence on every supported runtime.
+- Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
 - Iteration numbering, cancellation, callbacks, and the reported loss formula.
 - Corrupt or truncated persistence data, score/factor round trips, and cross-version fixtures.
 - Concurrent inference and cache initialization on an unchanged model.
