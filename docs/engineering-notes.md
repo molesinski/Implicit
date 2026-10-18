@@ -44,14 +44,14 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 72 cases on .NET Framework and 73 on each modern .NET target cover core recommendation behavior, small-matrix factorization, high-confidence direct training and feature inference, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Factorization tests explicitly reject NaN and infinity; high-confidence regressions also compare factors against an analytical solution. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
+The existing 81 cases on .NET Framework and 82 on each modern .NET target cover matrix construction and aggregation, core recommendation behavior, small-matrix factorization, high-confidence direct training and feature inference, ALS loss reporting, weighting normalization, model persistence, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Factorization tests explicitly reject NaN and infinity; high-confidence regressions also compare factors against an analytical solution. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
 
-- Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
+- Invalid interaction values and explicit behavior for training on empty data.
 - Unknown-ID behavior and mixed-sign or duplicate input to `ComputeUserFeatures` and `ComputeItemFeatures`.
 - Numerical similarity scores, not just ranking or parity groups.
 - Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
 - Iteration numbering, cancellation, callback exceptions, and numerical precision with large confidence sums.
-- Corrupt or truncated persistence data, score/factor round trips, and cross-version fixtures.
+- Corrupt or truncated persistence data and cross-version fixtures.
 - Concurrent inference and cache initialization on an unchanged model.
 
-Choose tests relevant to the code being changed. The current save/load test validates ranking within the same implementation version; it does not establish format stability or resilience to malformed input.
+Choose tests relevant to the code being changed. The current save/load test validates parameters, exact factors by ID, recommendation and similarity results, and stream lifetime and position within the same implementation version. It does not establish format stability or resilience to malformed input.

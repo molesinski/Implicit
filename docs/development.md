@@ -35,13 +35,15 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 ## Existing tests
 
-The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Fifteen weighting cases, twenty-four loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 72 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 73 cases each:
+The concrete ALS test class inherits shared tests from two abstract base classes, yielding 18 cases per target, including six high-confidence direct training and inference regressions. Nine matrix construction and interaction aggregation cases, fifteen weighting cases, twenty-four loss cases, three result ownership cases, nine enumerator cases, two pool cases, and one default lease case bring the total to 81 per target. A retained-lease allocation test runs on .NET 8/9/10, bringing those targets to 82 cases each:
 
 | Source | Behavior exercised |
 | --- | --- |
 | [RecommenderTest](../src/Implicit.Tests/RecommenderTest.cs) | Held-out diagonal recommendations and parity-based user/item similarity. |
 | [MatrixFactorizationRecommenderTest](../src/Implicit.Tests/MatrixFactorizationRecommenderTest.cs) | Reconstructed-user ranking, user inference from one item, and custom feature similarity. |
-| [AlternatingLeastSquaresRecommenderTest](../src/Implicit.Tests/AlternatingLeastSquaresRecommenderTest.cs) | Four combinations of direct/CG solving and positive/negative input; model save/load ranking. |
+| [AlternatingLeastSquaresRecommenderTest](../src/Implicit.Tests/AlternatingLeastSquaresRecommenderTest.cs) | Four combinations of direct/CG solving and positive/negative input; model save/load parameters, exact factors by ID, recommendation and similarity scores, and stream lifetime and position. |
+| [UserItemMatrixTest](../src/Implicit.Tests/UserItemMatrixTest.cs) | Both input formats, ID-to-value mappings, missing values, omitted zero-only users/items, duplicate aggregation, cancellation, and empty matrices. |
+| [UserItemValueExtensionsTest](../src/Implicit.Tests/UserItemValueExtensionsTest.cs) | Aggregation of signed duplicate interactions while preserving explicit zeros and cancelled totals. |
 | [AlternatingLeastSquaresLossTest](../src/Implicit.Tests/AlternatingLeastSquaresLossTest.cs) | Reported loss against an independent objective calculation, including missing entries, alpha scaling, regularization, direct/CG training, one/two workers, negative-only input, and pair counts exceeding the 32-bit integer range. |
 | [WeightTest](../src/Implicit.Tests/WeightTest.cs) | TF-IDF and BM25 normalization of single rows and multiple users, expected numerical values, unchanged unknown items, empty rows, and preservation of zero BM25 weights with boundary parameters and zero average fitting length. |
 | [RecommenderResultTest](../src/Implicit.Tests/RecommenderResultTest.cs) | Pool reuse and clearing after builder exceptions, original exception identity, and storage ownership until successful result disposal. |
@@ -49,9 +51,9 @@ The concrete ALS test class inherits shared tests from two abstract base classes
 | [ObjectPoolSlimTest](../src/Implicit.Tests/ObjectPoolSlimTest.cs) | Synchronized concurrent returns with four workers, retained instance identity and reset counts, and clearing before reuse. |
 | [ObjectPoolSlimLeaseTest](../src/Implicit.Tests/ObjectPoolSlimLeaseTest.cs) | Default lease disposal and allocation-free retained leases after warmup on .NET 8/9/10. |
 
-Most behavior tests use a 50-by-50 checkerboard with diagonal entries withheld. The factorization theory uses a small explicit matrix and rejects reconstruction errors above `1e-3f`. Seeded `Random(42)` sources stabilize training. The save/load test compares ordered IDs, not exact factor values or score equality.
+Recommendation integration tests use a 50-by-50 checkerboard with diagonal entries withheld. The factorization theory uses a small explicit matrix and rejects reconstruction errors above `1e-3f`. Seeded `Random(42)` sources stabilize training. The save/load test uses fixed factors, nondefault parameters, a Unicode ID, and dictionary iteration orders different from matrix row orders. It compares factors by ID and complete query results, allowing internal row indices to change on load.
 
-Use `[Fact]` for individual cases and `[Theory]` for meaningful parameter combinations. New tests should cover externally observable behavior, numerical tolerances, and regressions. Dispose results even though several older tests omit disposal. Result pool tests use a collection with parallelization disabled so that other test collections cannot interfere with shared pool identity assertions. There is no coverage collector or minimum percentage configured. See [Engineering considerations](engineering-notes.md) for uncovered areas.
+Use `[Fact]` for individual cases and `[Theory]` for meaningful parameter combinations. New tests should cover externally observable behavior, numerical tolerances, and regressions. Dispose results after consuming any deferred LINQ queries, as the recommendation tests do with scoped `using` declarations. Result pool tests use a collection with parallelization disabled so that other test collections cannot interfere with shared pool identity assertions. There is no coverage collector or minimum percentage configured. See [Engineering considerations](engineering-notes.md) for uncovered areas.
 
 ## Benchmarks
 

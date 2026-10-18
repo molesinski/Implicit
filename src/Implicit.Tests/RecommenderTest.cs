@@ -17,7 +17,7 @@ namespace Implicit.Tests
 
             foreach (var userId in userItems.Keys)
             {
-                var items = recommender.Recommend(userId);
+                using var items = recommender.Recommend(userId);
 
                 Assert.Equal(userId, items.Select(x => x.Key).Except(userItems[userId].Keys).First());
             }
@@ -33,10 +33,10 @@ namespace Implicit.Tests
 
             foreach (var userId in userItems.Keys)
             {
-                var result = recommender.SimilarUsers(userId).Take(n / 2);
+                using var result = recommender.SimilarUsers(userId);
                 var parity = int.Parse(userId, CultureInfo.InvariantCulture) % 2;
 
-                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+                var hits = result.Take(n / 2).Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
 
                 Assert.True(hits == n / 2);
             }
@@ -54,10 +54,10 @@ namespace Implicit.Tests
 
             foreach (var itemId in itemKeys)
             {
-                var result = recommender.SimilarItems(itemId).Take(n / 2);
+                using var result = recommender.SimilarItems(itemId);
                 var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
 
-                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+                var hits = result.Take(n / 2).Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
 
                 Assert.True(hits == n / 2);
             }

@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using MathNet.Numerics.LinearAlgebra;
+﻿using MathNet.Numerics.LinearAlgebra;
 using Xunit;
 
 namespace Implicit.Tests
@@ -118,25 +117,78 @@ namespace Implicit.Tests
         [Fact]
         public void SaveLoad()
         {
-            var n = 50;
-            var matrix = CreateCheckerBoard(n);
-            var userItems = ToUserItems(matrix);
-            var original = this.CreateRecommender(userItems);
+            var userFactors = new float[][]
+            {
+                new float[] { 1.25f, -2.5f },
+                new float[] { 0.125f, 3.75f },
+            };
+            var itemFactors = new float[][]
+            {
+                new float[] { -4f, 0.5f },
+                new float[] { 2f, -1f },
+                new float[] { 0f, 1.5f },
+            };
+
+            // Dictionary iteration order differs from matrix row order; persistence must follow IDs.
+            var original = new AlternatingLeastSquaresRecommender(
+                factors: 2,
+                regularization: 0.25f,
+                alpha: 3.5f,
+                users: new Dictionary<string, int> { ["żółw"] = 1, ["alice"] = 0 },
+                items: new Dictionary<string, int> { ["book-c"] = 2, ["book-a"] = 0, ["book-b"] = 1 },
+                userFactors: Matrix<float>.Build.DenseOfRowArrays(userFactors),
+                itemFactors: Matrix<float>.Build.DenseOfRowArrays(itemFactors));
 
             using var stream = new MemoryStream();
+            stream.WriteByte(42);
+            var start = stream.Position;
 
             original.Save(stream);
 
-            stream.Seek(0, SeekOrigin.Begin);
+            Assert.True(stream.CanRead);
+            Assert.True(stream.CanWrite);
+            var end = stream.Position;
+            stream.Position = 0;
+            Assert.Equal(42, stream.ReadByte());
+            stream.Position = start;
 
             var reconstructed = AlternatingLeastSquaresRecommender.Load(stream);
 
-            foreach (var userId in Enumerable.Range(0, n).Select(x => x.ToString(CultureInfo.InvariantCulture)))
-            {
-                var items1 = string.Join(",", original.Recommend(userId).Select(x => x.Key));
-                var items2 = string.Join(",", reconstructed.Recommend(userId).Select(x => x.Key));
+            Assert.True(stream.CanRead);
+            Assert.True(stream.CanWrite);
+            Assert.Equal(end, stream.Position);
+            Assert.Equal(original.Factors, reconstructed.Factors);
+            Assert.Equal(original.Regularization, reconstructed.Regularization);
+            Assert.Equal(original.Alpha, reconstructed.Alpha);
+            Assert.Equal(original.Users.Count, reconstructed.Users.Count);
+            Assert.Equal(original.Items.Count, reconstructed.Items.Count);
+            Assert.Equal(original.UserFactors.RowCount, reconstructed.UserFactors.RowCount);
+            Assert.Equal(original.UserFactors.ColumnCount, reconstructed.UserFactors.ColumnCount);
+            Assert.Equal(original.ItemFactors.RowCount, reconstructed.ItemFactors.RowCount);
+            Assert.Equal(original.ItemFactors.ColumnCount, reconstructed.ItemFactors.ColumnCount);
 
-                Assert.Equal(items1, items2);
+            foreach (var user in original.Users)
+            {
+                Assert.True(reconstructed.Users.TryGetValue(user.Key, out var row));
+                Assert.Equal(original.UserFactors.Row(user.Value).ToArray(), reconstructed.UserFactors.Row(row).ToArray());
+
+                using var expectedRecommendations = original.Recommend(user.Key);
+                using var actualRecommendations = reconstructed.Recommend(user.Key);
+                Assert.Equal(expectedRecommendations.ToArray(), actualRecommendations.ToArray());
+
+                using var expectedSimilarUsers = original.SimilarUsers(user.Key);
+                using var actualSimilarUsers = reconstructed.SimilarUsers(user.Key);
+                Assert.Equal(expectedSimilarUsers.ToArray(), actualSimilarUsers.ToArray());
+            }
+
+            foreach (var item in original.Items)
+            {
+                Assert.True(reconstructed.Items.TryGetValue(item.Key, out var row));
+                Assert.Equal(original.ItemFactors.Row(item.Value).ToArray(), reconstructed.ItemFactors.Row(row).ToArray());
+
+                using var expectedSimilarItems = original.SimilarItems(item.Key);
+                using var actualSimilarItems = reconstructed.SimilarItems(item.Key);
+                Assert.Equal(expectedSimilarItems.ToArray(), actualSimilarItems.ToArray());
             }
         }
 

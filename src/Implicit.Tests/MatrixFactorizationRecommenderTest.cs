@@ -19,10 +19,10 @@ namespace Implicit.Tests
             {
                 var user = recommender.ComputeUserFeatures(userItems[userId])!;
 
-                var original = string.Join(",", recommender.Recommend(userId).Select(x => x.Key));
-                var reconstructed = string.Join(",", recommender.Recommend(user).Select(x => x.Key));
+                using var original = recommender.Recommend(userId);
+                using var reconstructed = recommender.Recommend(user);
 
-                Assert.Equal(original, reconstructed);
+                Assert.Equal(original.Select(x => x.Key), reconstructed.Select(x => x.Key));
             }
         }
 
@@ -39,10 +39,10 @@ namespace Implicit.Tests
             foreach (var itemId in itemKeys)
             {
                 var user = recommender.ComputeUserFeatures([new(itemId, 1f)])!;
-                var result = recommender.SimilarUsers(user).Take(n / 2);
+                using var result = recommender.SimilarUsers(user);
                 var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
 
-                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+                var hits = result.Take(n / 2).Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
 
                 Assert.True(hits > (n / 2) / 2);
             }
@@ -61,10 +61,10 @@ namespace Implicit.Tests
             foreach (var userId in userItems.Keys)
             {
                 var features = recommender.GetUserFeatures(userId)!;
-                var result = features.SimilarFeatures(userFeatures).Take(n / 2);
+                using var result = features.SimilarFeatures(userFeatures);
                 var parity = int.Parse(userId, CultureInfo.InvariantCulture) % 2;
 
-                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+                var hits = result.Take(n / 2).Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
 
                 Assert.True(hits == n / 2);
             }
@@ -84,10 +84,10 @@ namespace Implicit.Tests
             foreach (var itemId in itemKeys)
             {
                 var features = recommender.GetItemFeatures(itemId)!;
-                var result = features.SimilarFeatures(itemFeatures).Take(n / 2);
+                using var result = features.SimilarFeatures(itemFeatures);
                 var parity = int.Parse(itemId, CultureInfo.InvariantCulture) % 2;
 
-                var hits = result.Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
+                var hits = result.Take(n / 2).Count(x => parity == int.Parse(x.Key, CultureInfo.InvariantCulture) % 2);
 
                 Assert.True(hits == n / 2);
             }
