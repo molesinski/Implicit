@@ -81,12 +81,12 @@ Supply a `CancellationToken` through `ParallelOptions`. Training checks cancella
 The implementation divides its accumulated loss by:
 
 ```text
-D = sum(observed u, i) abs(Alpha * value_ui) + U * I - nnz
+D = sum(observed u, i) abs(Alpha * value_ui) + (U * I - nnz)
 ```
 
 `nnz` counts enumerated nonzero interactions. The reported loss is `E / D`, including the regularization term. Positive observations contribute `c_ui * (1 - prediction)^2`; negative observations contribute `c_ui * prediction^2`, because their target preference is zero. The constant term in the expanded squared error therefore applies only to positive observations. Both signs contribute their absolute confidence to `D`, while missing entries contribute one.
 
-Both loss implementations calculate `U * I` as a 64-bit integer product before combining it with the floating-point confidence sum. This avoids 32-bit integer overflow when the number of user/item pairs exceeds `Int32.MaxValue`; the final normalization still uses single-precision arithmetic. Loss is not an offline ranking metric such as recall or NDCG.
+Both loss implementations calculate `U * I - nnz` entirely in 64-bit integer arithmetic before adding the confidence sum. This avoids integer overflow and cancellation of small confidence values when every pair is observed. Confidence accumulation and the final division use `double`; the numerator is still calculated in single precision and the reported loss is returned as `float`. Loss is not an offline ranking metric such as recall or NDCG.
 
 ## Computational cost
 

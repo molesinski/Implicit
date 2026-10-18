@@ -663,9 +663,9 @@ namespace Implicit
 
         private static float CalculateLoss(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization)
         {
-            var nnz = 0;
+            var nnz = 0L;
             var loss = 0f;
-            var total_confidence = 0f;
+            var total_confidence = 0d;
             var item_norm = 0f;
             var user_norm = 0f;
 
@@ -717,7 +717,10 @@ namespace Implicit
 
             var pairCount = (long)y.RowCount * x.RowCount;
 
-            return loss / (total_confidence + pairCount - nnz);
+            // Subtract integer counts before adding confidence, which can be much smaller than one.
+            var missingPairCount = pairCount - nnz;
+
+            return (float)(loss / (total_confidence + missingPairCount));
         }
 
         private static float CalculateLoss(Matrix<float> cui, Matrix<float> x, Matrix<float> y, float regularization, ParallelOptions parallelOptions)
@@ -726,9 +729,9 @@ namespace Implicit
             var yty = y.TransposeThisAndMultiply(y);
 
             var mutex = new object();
-            var nnz = 0;
+            var nnz = 0L;
             var loss = 0f;
-            var total_confidence = 0f;
+            var total_confidence = 0d;
             var item_norm = 0f;
             var user_norm = 0f;
 
@@ -742,9 +745,9 @@ namespace Implicit
                     xu = Vector<float>.Build.Dense(factors),
                     yi = Vector<float>.Build.Dense(factors),
                     r = Vector<float>.Build.Dense(factors),
-                    nnz = new int[1],
+                    nnz = new long[1],
                     loss = new float[1],
-                    total_confidence = new float[1],
+                    total_confidence = new double[1],
                     user_norm = new float[1],
                 },
                 (u, _, s) =>
@@ -826,7 +829,10 @@ namespace Implicit
 
             var pairCount = (long)y.RowCount * x.RowCount;
 
-            return loss / (total_confidence + pairCount - nnz);
+            // Subtract integer counts before adding confidence, which can be much smaller than one.
+            var missingPairCount = pairCount - nnz;
+
+            return (float)(loss / (total_confidence + missingPairCount));
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "By design")]

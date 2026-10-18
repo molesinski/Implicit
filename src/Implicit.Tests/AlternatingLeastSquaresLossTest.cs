@@ -47,6 +47,45 @@ namespace Implicit.Tests
         }
 
         [Theory]
+        [InlineData(false, 1e-7f)]
+        [InlineData(false, -1e-7f)]
+        [InlineData(false, 1e-8f)]
+        [InlineData(false, -1e-8f)]
+        [InlineData(false, 1e-20f)]
+        [InlineData(false, -1e-20f)]
+        [InlineData(true, 1e-7f)]
+        [InlineData(true, -1e-7f)]
+        [InlineData(true, 1e-8f)]
+        [InlineData(true, -1e-8f)]
+        [InlineData(true, 1e-20f)]
+        [InlineData(true, -1e-20f)]
+        public void ReportedLossHandlesSmallConfidence(bool conjugateGradient, float confidence)
+        {
+            // With no missing pairs, the denominator must retain even confidence below double epsilon at one.
+            var interactions = new[] { new UserItemValue("user", "item", confidence * 4f) };
+            var input = UserItemMatrix.Build(interactions);
+            var parameters = new AlternatingLeastSquaresParameters(
+                factors: 1,
+                regularization: 0.1f,
+                alpha: 0.25f,
+                iterations: 1,
+                useConjugateGradient: conjugateGradient,
+                calculateLossAtIteration: true,
+                random: new Random(42));
+            float? reportedLoss = null;
+            parameters.OnIterationCompleted = context => reportedLoss = context.Loss;
+
+            var model = AlternatingLeastSquaresRecommender.Fit(input, parameters);
+            var expected = CalculateObjective(input, model);
+
+            Assert.NotNull(reportedLoss);
+            var actual = reportedLoss.GetValueOrDefault();
+            Assert.False(float.IsNaN(actual));
+            Assert.False(float.IsInfinity(actual));
+            Assert.InRange(Math.Abs(expected - actual), 0d, 1e-6d * Math.Max(1d, Math.Abs(expected)));
+        }
+
+        [Theory]
         [InlineData(false)]
         [InlineData(true)]
         public void NegativeOnlyObservationsHaveZeroLoss(bool conjugateGradient)
