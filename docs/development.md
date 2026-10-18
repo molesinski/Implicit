@@ -35,7 +35,7 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 ## Existing tests
 
-The concrete ALS test class inherits shared tests from two abstract base classes, yielding 12 cases per target. Eight weighting cases, twelve loss cases, three result ownership cases, three pool cases, and seven lease regression cases bring the total to 45 per target:
+The concrete ALS test class inherits shared tests from two abstract base classes, yielding 12 cases per target. Eight weighting cases, twelve loss cases, three result ownership cases, nine enumerator cases, three pool cases, and seven lease regression cases bring the total to 54 per target:
 
 | Source | Behavior exercised |
 | --- | --- |
@@ -45,6 +45,7 @@ The concrete ALS test class inherits shared tests from two abstract base classes
 | [AlternatingLeastSquaresLossTest](../src/Implicit.Tests/AlternatingLeastSquaresLossTest.cs) | Reported loss against an independent objective calculation, including missing entries, alpha scaling, regularization, direct/CG training, one/two workers, negative-only input, and pair counts exceeding the 32-bit integer range. |
 | [WeightTest](../src/Implicit.Tests/WeightTest.cs) | TF-IDF and BM25 normalization of single rows and multiple users, expected numerical values, unchanged unknown items, and empty rows. |
 | [RecommenderResultTest](../src/Implicit.Tests/RecommenderResultTest.cs) | Pool reuse and clearing after builder exceptions, original exception identity, and storage ownership until successful result disposal. |
+| [RecommenderResultEnumeratorTest](../src/Implicit.Tests/RecommenderResultEnumeratorTest.cs) | Enumerator lifetime checks before/after pool reuse, copies and interfaces, disposal at different iteration stages, deferred LINQ, live iteration/reset, and shared empty results. |
 | [ObjectPoolSlimTest](../src/Implicit.Tests/ObjectPoolSlimTest.cs) | Synchronized concurrent returns with two/four workers, reuse without replacement allocations, cleared contents, and preservation of retained objects when the pool is full. |
 | [ObjectPoolSlimLeaseTest](../src/Implicit.Tests/ObjectPoolSlimLeaseTest.cs) | Repeated, copied, boxed, and concurrent disposal; stale copies after subsequent leases; default leases and resetter failures. |
 

@@ -69,7 +69,7 @@ using (var result = model.Recommend("alice"))
 // snapshot remains valid here.
 ```
 
-For a pooled result, accessing `Count`, its indexer, or obtaining an enumerator after disposal throws `ObjectDisposedException`. An enumerator acquired before disposal has no lifetime check; do not continue using it after the owner is disposed. LINQ queries are usually deferred, so returning `result.Take(10)` from a disposed scope is invalid.
+For a pooled result, accessing `Count`, its indexer, or obtaining an enumerator after disposal throws `ObjectDisposedException`. Previously acquired enumerators also throw from `MoveNext`, `Current`, and `Reset`, including copied and boxed enumerators, even if another result has reused the pooled list. Disposing an enumerator remains safe after its owner is disposed. LINQ queries are usually deferred, so returning `result.Take(10)` from a disposed scope is invalid.
 
 `Dispose` on the result object is idempotent. The shared `Empty` result has no pool lease and remains readable after disposal. Always using a `using` scope handles both cases correctly.
 

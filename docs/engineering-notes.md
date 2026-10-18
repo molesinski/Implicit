@@ -34,7 +34,7 @@ Use one lexical `using` owner per lease and do not use `Instance` after any copy
 
 If a `RecommenderResult.Create` builder throws, the factory releases the lease and rethrows the original exception. The list is cleared before it can be reused. On success, ownership transfers to the result until disposal. Holding pooled results indefinitely prevents reuse, and a returned list retains its capacity after clearing. A pool containing large result lists can therefore retain substantial memory.
 
-Existing enumerators do not detect owner disposal. Never share or enumerate a result after disposal, including through deferred LINQ queries. These ownership cases are not covered by the current tests.
+Result enumerators retain an owner reference and check disposal before advancing, reading the current item, or resetting. Copies and boxed enumerators share that lifetime check, preventing access to a list reused by another result. The enumerator remains a struct; the owner reference needs no additional heap object. Regression tests cover disposal at different iteration stages, pool reuse, copies, interfaces, and deferred LINQ enumeration. The shared `Empty` result remains reusable after disposal. These checks do not synchronize concurrent enumeration and disposal; callers must keep result disposal outside active enumeration.
 
 ## Ranking and serving scale
 
@@ -44,12 +44,11 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 45 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership, concurrent pool returns, and copied lease disposal. Useful additions for future functional changes include:
+The existing 54 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, and copied lease disposal. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.
 - Numerical similarity scores, not just ranking or parity groups.
-- Access after result disposal and deferred enumeration; builder exceptions, successful result ownership, and copied lease disposal already have regression coverage.
 - Weight fitting edge cases and persistence on every supported runtime; normalizing known, unknown, and empty rows already has regression coverage.
 - Iteration numbering, cancellation, callback exceptions, and numerical precision with large confidence sums.
 - Corrupt or truncated persistence data, score/factor round trips, and cross-version fixtures.

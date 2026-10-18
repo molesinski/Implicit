@@ -84,7 +84,7 @@ namespace Implicit
         {
             if (this.storage is null)
             {
-                return new Enumerator(EmptyStorage);
+                return new Enumerator(null, EmptyStorage);
             }
 
             if (this.disposed)
@@ -92,7 +92,7 @@ namespace Implicit
                 throw new ObjectDisposedException(this.GetType().FullName);
             }
 
-            return new Enumerator(this.storage.Value.Instance);
+            return new Enumerator(this, this.storage.Value.Instance);
         }
 
         IEnumerator<KeyValuePair<string, float>> IEnumerable<KeyValuePair<string, float>>.GetEnumerator()
@@ -109,20 +109,22 @@ namespace Implicit
         {
             if (!this.disposed)
             {
-                this.storage?.Dispose();
                 this.disposed = true;
+                this.storage?.Dispose();
             }
         }
 
         public struct Enumerator : IEnumerator<KeyValuePair<string, float>>
         {
+            private readonly RecommenderResult? owner;
             private readonly List<KeyValuePair<string, float>> storage;
             private readonly int count;
             private int index;
             private KeyValuePair<string, float> current;
 
-            internal Enumerator(List<KeyValuePair<string, float>> storage)
+            internal Enumerator(RecommenderResult? owner, List<KeyValuePair<string, float>> storage)
             {
+                this.owner = owner;
                 this.storage = storage;
                 this.count = storage.Count;
                 this.index = 0;
@@ -133,6 +135,7 @@ namespace Implicit
             {
                 get
                 {
+                    this.ThrowIfDisposed();
                     return this.current;
                 }
             }
@@ -147,6 +150,8 @@ namespace Implicit
 
             public bool MoveNext()
             {
+                this.ThrowIfDisposed();
+
                 if (this.index < this.count)
                 {
                     this.current = this.storage[this.index];
@@ -163,12 +168,21 @@ namespace Implicit
 
             void IEnumerator.Reset()
             {
+                this.ThrowIfDisposed();
                 this.index = 0;
                 this.current = default;
             }
 
             public readonly void Dispose()
             {
+            }
+
+            private readonly void ThrowIfDisposed()
+            {
+                if (this.owner?.disposed == true)
+                {
+                    throw new ObjectDisposedException(this.owner.GetType().FullName);
+                }
             }
         }
     }
