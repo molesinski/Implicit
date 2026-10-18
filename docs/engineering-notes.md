@@ -26,7 +26,7 @@ BM25 can turn positive event counts into negative weights; ALS interprets those 
 
 ## Pool and result ownership
 
-[`ObjectPoolSlim`](../src/Implicit/Utils/ObjectPoolSlim.cs) atomically acquires slots, but returns an instance using an ordinary null check and assignment. Concurrent returns can overwrite a retained slot and reduce reuse. The pool is a best-effort allocation optimization, not a bounded resource allocator.
+[`ObjectPoolSlim`](../src/Implicit/Utils/ObjectPoolSlim.cs) uses atomic compare-and-exchange operations for both acquisition and return. After resetting an object, a return claims an empty slot only if it is still empty; a competing return cannot overwrite the retained object. If another thread wins that slot, the return continues scanning. A full pool still discards excess returns after resetting them. Retention capacity does not limit the number of simultaneously leased objects.
 
 [`ObjectPoolSlimLease`](../src/Implicit/Utils/ObjectPoolSlimLease.cs) is a public readonly struct. Copying a lease and disposing both copies, or disposing the same lease twice, can return one instance multiple times. Use one lexical `using` owner per lease. `RecommenderResult` adds its own idempotent-disposal guard; the raw lease does not.
 
@@ -42,7 +42,7 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 35 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, and result pool ownership. Useful additions for future functional changes include:
+The existing 38 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership, and concurrent pool returns. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.

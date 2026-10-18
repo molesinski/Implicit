@@ -51,6 +51,6 @@ Training runs one `Parallel.For` over users, then another over items. Each loop 
 
 Inference uses a per-model `ObjectPoolSlim<FactorizationState>`; result lists use a static pool. Each pool has `Environment.ProcessorCount * 5` retention slots, allocates when none are available, and discards returns when full. Retention slots are not a concurrency limit.
 
-Norm and Gram matrix caches initialize lazily without explicit synchronization. The pool uses atomic acquisition but a best-effort, non-atomic return path. These mechanisms do not establish a general thread-safety guarantee for mutable models or shared result instances. Keep model state unchanged, give each request its own result lifetime, and validate concurrent serving behavior for your workload.
+Norm and Gram matrix caches initialize lazily without explicit synchronization. The pool uses atomic compare-and-exchange operations to acquire and return objects. A return resets the object before publishing it and continues to the next slot if another return claims the same slot first. Pool synchronization does not establish a general thread-safety guarantee for mutable models or shared result instances. Keep model state unchanged, give each request its own result lifetime, and validate concurrent serving behavior for your workload.
 
 See [Engineering considerations](engineering-notes.md) before changing cache or pool ownership.

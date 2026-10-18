@@ -35,7 +35,7 @@ dotnet test src/Implicit.Tests/Implicit.Tests.csproj -c Release -f net10.0 --fil
 
 ## Existing tests
 
-The concrete ALS test class inherits shared tests from two abstract base classes, yielding 12 cases per target. Eight weighting cases, twelve loss cases, and three result ownership regression cases bring the total to 35 per target:
+The concrete ALS test class inherits shared tests from two abstract base classes, yielding 12 cases per target. Eight weighting cases, twelve loss cases, three result ownership cases, and three pool regression cases bring the total to 38 per target:
 
 | Source | Behavior exercised |
 | --- | --- |
@@ -45,6 +45,7 @@ The concrete ALS test class inherits shared tests from two abstract base classes
 | [AlternatingLeastSquaresLossTest](../src/Implicit.Tests/AlternatingLeastSquaresLossTest.cs) | Reported loss against an independent objective calculation, including missing entries, alpha scaling, regularization, direct/CG training, one/two workers, negative-only input, and pair counts exceeding the 32-bit integer range. |
 | [WeightTest](../src/Implicit.Tests/WeightTest.cs) | TF-IDF and BM25 normalization of single rows and multiple users, expected numerical values, unchanged unknown items, and empty rows. |
 | [RecommenderResultTest](../src/Implicit.Tests/RecommenderResultTest.cs) | Pool reuse and clearing after builder exceptions, original exception identity, and storage ownership until successful result disposal. |
+| [ObjectPoolSlimTest](../src/Implicit.Tests/ObjectPoolSlimTest.cs) | Synchronized concurrent returns with two/four workers, reuse without replacement allocations, cleared contents, and preservation of retained objects when the pool is full. |
 
 Most behavior tests use a 50-by-50 checkerboard with diagonal entries withheld. The factorization theory uses a small explicit matrix and rejects reconstruction errors above `1e-3f`. Seeded `Random(42)` sources stabilize training. The save/load test compares ordered IDs, not exact factor values or score equality.
 
