@@ -1,29 +1,31 @@
 ﻿namespace Implicit.Utils
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "By design")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "Not intended to be used directly for comparison")]
     public readonly struct ObjectPoolSlimLease<TItem> : IDisposable
         where TItem : class
     {
-        private readonly ObjectPoolSlim<TItem>.Item? item;
-        private readonly long version;
+        private readonly ObjectPoolSlim<TItem>? pool;
+        private readonly TItem instance;
 
-        internal ObjectPoolSlimLease(ObjectPoolSlim<TItem>.Item item)
+        internal ObjectPoolSlimLease(
+            ObjectPoolSlim<TItem> pool,
+            TItem target)
         {
-            this.item = item;
-            this.version = item.NextLeaseVersion();
+            this.pool = pool;
+            this.instance = target;
         }
 
         public readonly TItem Instance
         {
             get
             {
-                return this.item is null ? default! : this.item.Instance;
+                return this.instance;
             }
         }
 
         public readonly void Dispose()
         {
-            this.item?.Return(this.version);
+            this.pool?.Return(this.instance);
         }
     }
 }

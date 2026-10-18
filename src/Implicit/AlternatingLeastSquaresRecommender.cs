@@ -34,8 +34,7 @@ namespace Implicit
                     () => new FactorizationState(
                         userFactors.RowCount,
                         itemFactors.RowCount,
-                        factors),
-                    _ => { });
+                        factors));
 
             this.regularization = regularization;
             this.alpha = alpha;

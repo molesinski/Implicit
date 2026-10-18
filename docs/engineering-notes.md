@@ -28,9 +28,9 @@ BM25 can turn positive event counts into negative weights; ALS interprets those 
 
 [`ObjectPoolSlim`](../src/Implicit/Utils/ObjectPoolSlim.cs) uses atomic compare-and-exchange operations for both acquisition and return. After resetting an object, a return claims an empty slot only if it is still empty; a competing return cannot overwrite the retained object. If another thread wins that slot, the return continues scanning. A full pool still discards excess returns after resetting them. Retention capacity does not limit the number of simultaneously leased objects.
 
-[`ObjectPoolSlimLease`](../src/Implicit/Utils/ObjectPoolSlimLease.cs) remains a public readonly struct. Copies, including boxed copies, share metadata with a lease version. `Dispose` atomically closes that version before resetting and returning the object, so repeated or concurrent disposal returns it at most once. A stale copy cannot close a later lease of the same object. Disposing a default lease is a no-op. If the resetter throws, the exception propagates, the object is not republished, and later disposal attempts do not retry the reset.
+[`ObjectPoolSlimLease`](../src/Implicit/Utils/ObjectPoolSlimLease.cs) is a public readonly struct holding the pool and instance references. It has no shared disposal state or per-instance metadata allocation. Disposing a default lease is a no-op. The default resetter calls `IResettable.Reset()` when supported; a custom resetter replaces this behavior. If resetting throws, the instance is not republished. Prefer non-throwing resetters and do not retry disposal after a reset failure.
 
-Use one lexical `using` owner per lease and do not use `Instance` after any copy is disposed. The property still exposes the underlying reference; idempotent disposal does not protect against access through stale references. The metadata is reused with retained objects, avoiding a new shared-state allocation on each lease.
+Keep one logical owner and use `using`. Dispose each acquired lease exactly once, including across copied or boxed values. Repeated disposal can publish the same instance more than once or reset it while another caller uses it. Do not access `Instance` after disposal. `RecommenderResult` retains its own disposal guard and enumerator lifetime checks; inference uses one scoped lease per call.
 
 If a `RecommenderResult.Create` builder throws, the factory releases the lease and rethrows the original exception. The list is cleared before it can be reused. On success, ownership transfers to the result until disposal. Holding pooled results indefinitely prevents reuse, and a returned list retains its capacity after clearing. A pool containing large result lists can therefore retain substantial memory.
 
@@ -44,7 +44,7 @@ There is no built-in relevance evaluation, model selection, online update protoc
 
 ## Regression coverage priorities
 
-The existing 54 cases per framework cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, and copied lease disposal. Useful additions for future functional changes include:
+The existing 47 cases on .NET Framework and 48 on each modern .NET target cover core recommendation behavior, small-matrix factorization, ALS loss reporting, weighting normalization, result pool ownership and enumerator lifetime, concurrent pool returns, resetting, and default lease disposal. Modern .NET targets also verify allocation-free reuse of retained objects. Useful additions for future functional changes include:
 
 - Matrix construction with duplicate pairs, cancellation to zero, empty input, and invalid values.
 - Unknown-ID behavior and `ComputeItemFeatures`, which has no direct dedicated test.

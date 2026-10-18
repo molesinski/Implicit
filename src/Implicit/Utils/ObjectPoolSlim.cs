@@ -4,12 +4,28 @@
         where TItem : class
     {
         private const int DegreeOfParallelism = 5;
+        private const int DefaultSizeFactor = 1;
 
-        private readonly Item?[] items;
+        private readonly Item[] items;
         private readonly Func<TItem> factory;
         private readonly Action<TItem> resetter;
 
+        public ObjectPoolSlim(Func<TItem> factory)
+            : this(factory, DefaultResetter, DefaultSizeFactor)
+        {
+        }
+
+        public ObjectPoolSlim(Func<TItem> factory, int sizeFactor)
+            : this(factory, DefaultResetter, sizeFactor)
+        {
+        }
+
         public ObjectPoolSlim(Func<TItem> factory, Action<TItem> resetter)
+            : this(factory, resetter, DefaultSizeFactor)
+        {
+        }
+
+        public ObjectPoolSlim(Func<TItem> factory, Action<TItem> resetter, int sizeFactor)
         {
             if (factory is null)
             {
@@ -21,38 +37,45 @@
                 throw new ArgumentNullException(nameof(resetter));
             }
 
-            this.items = new Item[Environment.ProcessorCount * DegreeOfParallelism];
+            if (sizeFactor < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sizeFactor));
+            }
+
+            this.items = new Item[Environment.ProcessorCount * DegreeOfParallelism * sizeFactor];
             this.factory = factory;
             this.resetter = resetter;
         }
 
         public ObjectPoolSlimLease<TItem> Lease()
         {
+            var instance = default(TItem);
+
             for (var i = 0; i < this.items.Length; i++)
             {
-                var item = this.items[i];
+                instance = this.items[i].Value;
 
-                if (item is not null)
+                if (instance is not null)
                 {
-                    if (item == Interlocked.CompareExchange(ref this.items[i], null, item))
+                    if (instance == Interlocked.CompareExchange(ref this.items[i].Value!, null, instance))
                     {
-                        return new ObjectPoolSlimLease<TItem>(item);
+                        return new ObjectPoolSlimLease<TItem>(this, instance);
                     }
                 }
             }
 
-            return new ObjectPoolSlimLease<TItem>(new Item(this, this.factory()));
+            return new ObjectPoolSlimLease<TItem>(this, this.factory());
         }
 
-        private void Return(Item item)
+        internal void Return(TItem instance)
         {
-            this.resetter(item.Instance);
+            this.resetter(instance);
 
             for (var i = 0; i < this.items.Length; i++)
             {
-                if (this.items[i] is null)
+                if (this.items[i].Value is null)
                 {
-                    if (Interlocked.CompareExchange(ref this.items[i], item, null) is null)
+                    if (Interlocked.CompareExchange(ref this.items[i].Value!, instance, null) is null)
                     {
                         break;
                     }
@@ -60,32 +83,14 @@
             }
         }
 
-        internal sealed class Item
+        private static void DefaultResetter(TItem instance)
         {
-            private readonly ObjectPoolSlim<TItem> pool;
-            private long version;
+            (instance as IResettable)?.Reset();
+        }
 
-            internal Item(ObjectPoolSlim<TItem> pool, TItem instance)
-            {
-                this.pool = pool;
-                this.Instance = instance;
-            }
-
-            internal TItem Instance { get; }
-
-            internal long NextLeaseVersion()
-            {
-                // Odd versions are leased; the following even version marks a completed return.
-                return Interlocked.Increment(ref this.version);
-            }
-
-            internal void Return(long leaseVersion)
-            {
-                if (Interlocked.CompareExchange(ref this.version, unchecked(leaseVersion + 1), leaseVersion) == leaseVersion)
-                {
-                    this.pool.Return(this);
-                }
-            }
+        private struct Item
+        {
+            public TItem Value;
         }
     }
 }
