@@ -4,12 +4,12 @@ Use the repository's SDK and analyzer configuration when changing the library. [
 
 ## Toolchain and targets
 
-[`global.json`](../global.json) selects SDK `10.0.100` with `latestFeature` roll-forward. [`Directory.Build.props`](../Directory.Build.props) selects C# 14, nullable reference analysis, implicit usings, .NET analysis level 10, and build-time code style enforcement. All warnings are errors. StyleCop.Analyzers `1.2.0-beta.556` is shared across projects.
+[`global.json`](../global.json) selects SDK `10.0.100` with `latestFeature` roll-forward. [`Directory.Build.props`](../Directory.Build.props) selects C# 14, nullable reference analysis, implicit usings, .NET analysis level 10, and build-time code style enforcement. All warnings are errors. StyleCop.Analyzers `1.3.109-beta` is shared across projects.
 
 | Project | Targets | Principal dependencies |
 | --- | --- | --- |
-| Library | `netstandard2.0`, `netstandard2.1`, `net8.0`, `net9.0`, `net10.0` | MathNet.Numerics `5.0.0`; Microsoft.Bcl.Numerics `8.0.0` only for `netstandard2.0`. |
-| Tests | `net472`, `net8.0`, `net9.0`, `net10.0` | xUnit `2.9.3`, runner `3.1.5`, Microsoft.NET.Test.Sdk `18.0.1`. |
+| Library | `netstandard2.0`, `netstandard2.1`, `net8.0`, `net9.0`, `net10.0` | MathNet.Numerics `5.0.0`; Microsoft.Bcl.Numerics `10.0.13` only for `netstandard2.0`. |
+| Tests | `net472`, `net8.0`, `net9.0`, `net10.0` | xUnit `2.9.3`, runner `4.0.1`, Microsoft.NET.Test.Sdk `18.11.0`. |
 | Benchmarks | `net10.0` | BenchmarkDotNet `0.15.8`, MathNet.Numerics.MKL.Win-x64 `3.0.0`. |
 
 The full test matrix needs Windows and .NET Framework 4.7.2-compatible execution, plus .NET 8, 9, and 10 runtimes. Installing only a .NET 10 SDK does not supply every older runtime. A .NET Framework targeting pack or reference assemblies must also be available for compilation. Run a single modern target for a narrower development check.
